@@ -87,7 +87,7 @@ export const ProductGrid = memo(
         }
 
         return (
-            <div className="px-4 py-8 sm:px-6 lg:px-8">
+            <div id="products" className="px-4 py-8 sm:px-6 lg:px-8">
                 {/* Results Count */}
                 <div className="mb-6">
                     <p className="text-gray-600">

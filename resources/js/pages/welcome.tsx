@@ -5,6 +5,7 @@ import {
     useQuery,
 } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
+import { BannerCarousel } from '../components/BannerCarousel';
 import { CartDrawer } from '../components/CartDrawer';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { Header } from '../components/Header';
@@ -86,7 +87,6 @@ const fetchProducts = async (
 
     let filtered = [...mockProducts];
 
-    // Apply search filter
     if (filters.search) {
         const searchLower = filters.search.toLowerCase();
         filtered = filtered.filter((p) =>
@@ -94,19 +94,16 @@ const fetchProducts = async (
         );
     }
 
-    // Apply category filter
     if (filters.categories.length > 0) {
         filtered = filtered.filter((p) =>
             p.categories.some((cat) => filters.categories.includes(cat.id)),
         );
     }
 
-    // Apply price filter
     filtered = filtered.filter(
         (p) => p.price >= filters.priceMin && p.price <= filters.priceMax,
     );
 
-    // Apply sorting
     switch (filters.sortBy) {
         case 'price-asc':
             filtered.sort((a, b) => a.price - b.price);
@@ -199,7 +196,6 @@ function StorefrontContent() {
             gcTime: 300000, // 5 minutes
         });
 
-    // Flatten paginated data
     const products = useMemo(() => {
         return data?.pages.flatMap((page) => page.data) ?? [];
     }, [data]);
@@ -232,6 +228,9 @@ function StorefrontContent() {
                 onSearchChange={handleSearchChange}
                 onToggleFilters={handleToggleFilters}
             />
+
+            {/* Banner Carousel */}
+            <BannerCarousel />
 
             {/* Main Layout with Sidebar */}
             <div className="flex">
