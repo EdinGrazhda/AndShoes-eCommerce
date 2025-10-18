@@ -108,6 +108,27 @@ export const ProductCard = memo(
                         {product.name}
                     </h3>
 
+                    {/* Gender Badge */}
+                    {product.gender && (
+                        <div className="mb-2">
+                            <span
+                                className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                                    product.gender === 'male'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : product.gender === 'female'
+                                          ? 'bg-pink-100 text-pink-800'
+                                          : 'bg-gray-100 text-gray-800'
+                                }`}
+                            >
+                                {product.gender === 'male'
+                                    ? 'Male'
+                                    : product.gender === 'female'
+                                      ? 'Female'
+                                      : 'Unisex'}
+                            </span>
+                        </div>
+                    )}
+
                     {/* Rating */}
                     <div
                         className="mb-2 flex items-center gap-1"

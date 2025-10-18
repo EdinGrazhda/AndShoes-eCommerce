@@ -17,6 +17,7 @@ interface Product {
     stock: 'in stock' | 'out of stock' | 'low stock';
     foot_numbers?: string;
     color?: string;
+    gender?: 'male' | 'female' | 'unisex';
     category?: Category;
     category_id?: number;
 }
@@ -38,6 +39,7 @@ interface FormData {
     foot_numbers: string;
     color: string;
     category_id: number | '';
+    gender: 'male' | 'female' | 'unisex';
     sizeStocks: Record<string, number>; // New field for size-specific stock
 }
 
@@ -57,6 +59,7 @@ export default function ProductModal({
         foot_numbers: product?.foot_numbers || '',
         color: product?.color || '',
         category_id: product?.category_id || product?.category?.id || '',
+        gender: product?.gender || 'unisex',
         sizeStocks: {},
     });
 
@@ -76,6 +79,7 @@ export default function ProductModal({
                 color: product?.color || '',
                 category_id:
                     product?.category_id || product?.category?.id || '',
+                gender: product?.gender || 'unisex',
                 sizeStocks: {},
             });
             setErrors({});
@@ -333,6 +337,33 @@ export default function ProductModal({
                                 {errors.stock && (
                                     <p className="mt-1 text-sm text-red-600">
                                         {errors.stock[0]}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Gender */}
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                    Gender *
+                                </label>
+                                <select
+                                    value={formData.gender}
+                                    onChange={(e) =>
+                                        handleInputChange(
+                                            'gender',
+                                            e.target.value as any,
+                                        )
+                                    }
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 focus:outline-none"
+                                    required
+                                >
+                                    <option value="unisex">Unisex</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                                {errors.gender && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {errors.gender[0]}
                                     </p>
                                 )}
                             </div>

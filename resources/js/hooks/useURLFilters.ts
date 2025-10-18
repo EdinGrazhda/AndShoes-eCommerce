@@ -15,6 +15,7 @@ export function useURLFilters() {
             [];
         const priceMin = Number(params.get('priceMin')) || 0;
         const priceMax = Number(params.get('priceMax')) || 10000;
+        const gender = params.get('gender')?.split(',').filter(Boolean) || [];
         const sortBy = (params.get('sortBy') || 'newest') as Filters['sortBy'];
 
         return {
@@ -22,6 +23,7 @@ export function useURLFilters() {
             categories,
             priceMin,
             priceMax,
+            gender,
             sortBy,
         };
     });
@@ -46,6 +48,10 @@ export function useURLFilters() {
             newParams.set('priceMax', String(filters.priceMax));
         }
 
+        if (filters.gender.length > 0) {
+            newParams.set('gender', filters.gender.join(','));
+        }
+
         if (filters.sortBy !== 'newest') {
             newParams.set('sortBy', filters.sortBy);
         }
@@ -66,6 +72,7 @@ export function useURLFilters() {
             categories: [],
             priceMin: 0,
             priceMax: 10000,
+            gender: [],
             sortBy: 'newest',
         });
     }, []);
@@ -76,6 +83,7 @@ export function useURLFilters() {
             filters.categories.length > 0 ||
             filters.priceMin > 0 ||
             filters.priceMax < 10000 ||
+            filters.gender.length > 0 ||
             filters.sortBy !== 'newest'
         );
     }, [filters]);

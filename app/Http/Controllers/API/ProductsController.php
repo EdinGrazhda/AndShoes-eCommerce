@@ -51,6 +51,14 @@ class ProductsController extends Controller
                 $query->where('foot_numbers', 'like', '%' . $request->foot_numbers . '%');
             }
 
+            if ($request->has('gender') && !empty($request->gender)) {
+                if (is_array($request->gender)) {
+                    $query->whereIn('gender', $request->gender);
+                } else {
+                    $query->where('gender', $request->gender);
+                }
+            }
+
             // Apply sorting
             $sortBy = $request->get('sort_by', 'created_at');
             $sortOrder = $request->get('sort_order', 'desc');
@@ -117,7 +125,8 @@ class ProductsController extends Controller
                 'stock' => 'required|string|in:in stock,out of stock,low stock',
                 'foot_numbers' => 'nullable|string|max:255',
                 'color' => 'nullable|string|max:255',
-                'category_id' => 'required|exists:categories,id'
+                'category_id' => 'required|exists:categories,id',
+                'gender' => 'required|string|in:male,female,unisex'
             ]);
 
             if ($validator->fails()) {
@@ -136,7 +145,8 @@ class ProductsController extends Controller
                 'stock' => $request->stock,
                 'foot_numbers' => $request->foot_numbers,
                 'color' => $request->color,
-                'category_id' => $request->category_id
+                'category_id' => $request->category_id,
+                'gender' => $request->gender
             ]);
 
             $product->load('category');
@@ -219,7 +229,8 @@ class ProductsController extends Controller
                 'stock' => 'sometimes|required|string|in:in stock,out of stock,low stock',
                 'foot_numbers' => 'sometimes|nullable|string|max:255',
                 'color' => 'sometimes|nullable|string|max:255',
-                'category_id' => 'sometimes|required|exists:categories,id'
+                'category_id' => 'sometimes|required|exists:categories,id',
+                'gender' => 'sometimes|required|string|in:male,female,unisex'
             ]);
 
             if ($validator->fails()) {
@@ -230,7 +241,7 @@ class ProductsController extends Controller
                 ], 422);
             }
 
-            $product->update($request->only(['name', 'description', 'price', 'image', 'stock', 'foot_numbers', 'color', 'category_id']));
+            $product->update($request->only(['name', 'description', 'price', 'image', 'stock', 'foot_numbers', 'color', 'category_id', 'gender']));
 
             $product->load('category');
 

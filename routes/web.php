@@ -3,6 +3,7 @@
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProductsController;
+use App\Http\Controllers\CategoryController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -15,6 +16,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('products',[ProductsController::class, 'index'])->name('products.index');
     Route::get('admin/products',[ProductsController::class, 'index'])->name('admin.products.index');
+    Route::get('admin/categories',[CategoryController::class, 'index'])->name('admin.categories.index');
 });
 
 require __DIR__.'/settings.php';

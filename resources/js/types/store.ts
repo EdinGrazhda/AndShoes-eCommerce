@@ -9,6 +9,7 @@ export interface Product {
     foot_numbers?: string; // Available sizes as comma-separated string
     sizeStocks?: Record<string, number>; // Size-specific stock quantities
     color?: string;
+    gender?: 'male' | 'female' | 'unisex';
     categories: Category[];
     created_at: string;
 }
@@ -29,6 +30,7 @@ export interface Filters {
     categories: number[];
     priceMin: number;
     priceMax: number;
+    gender: string[];
     sortBy: 'newest' | 'price-asc' | 'price-desc' | 'rating';
 }
 
