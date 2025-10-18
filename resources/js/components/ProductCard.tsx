@@ -1,6 +1,5 @@
-import { ShoppingCart, Star } from 'lucide-react';
+import { Eye, Star } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
-import { useCartStore } from '../store/cartStore';
 import type { Product } from '../types/store';
 
 interface ProductCardProps {
@@ -15,16 +14,13 @@ interface ProductCardProps {
 export const ProductCard = memo(
     ({ product, onQuickView }: ProductCardProps) => {
         const [imageLoaded, setImageLoaded] = useState(false);
-        const addItem = useCartStore((state) => state.addItem);
 
-        const handleAddToCart = useCallback(
+        const handleShowDetails = useCallback(
             (e: React.MouseEvent) => {
                 e.stopPropagation();
-                if (product.stock !== 'out of stock') {
-                    addItem(product);
-                }
+                onQuickView?.(product);
             },
-            [addItem, product],
+            [onQuickView, product],
         );
 
         const handleQuickView = useCallback(() => {
@@ -212,16 +208,12 @@ export const ProductCard = memo(
                         </span>
 
                         <button
-                            onClick={handleAddToCart}
-                            disabled={isOutOfStock}
-                            className={`rounded-lg p-2 transition-all duration-200 focus:ring-2 focus:ring-[#771E49] focus:outline-none ${
-                                isOutOfStock
-                                    ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-                                    : 'bg-[#771E49] text-white hover:scale-110 hover:bg-[#5a1738]'
-                            }`}
-                            aria-label={`Add ${product.name} to cart`}
+                            onClick={handleShowDetails}
+                            className="flex items-center gap-1.5 rounded-lg bg-[#771E49] px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-[#5a1738] focus:outline-none focus:ring-2 focus:ring-[#771E49]"
+                            aria-label={`View details for ${product.name}`}
                         >
-                            <ShoppingCart size={20} />
+                            <Eye size={16} />
+                            <span>Details</span>
                         </button>
                     </div>
                 </div>
