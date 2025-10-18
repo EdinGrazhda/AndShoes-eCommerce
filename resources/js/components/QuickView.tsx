@@ -14,14 +14,8 @@ interface QuickViewProps {
  */
 export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
     const [quantity, setQuantity] = useState(1);
+    const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const addItem = useCartStore((state) => state.addItem);
-
-    const handleAddToCart = useCallback(() => {
-        if (product && product.stock > 0) {
-            addItem(product, quantity);
-            onClose();
-        }
-    }, [product, quantity, addItem, onClose]);
 
     const handleBackdropClick = useCallback(
         (e: React.MouseEvent) => {
@@ -32,10 +26,48 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
         [onClose],
     );
 
+    const handleAddToCart = useCallback(() => {
+        if (product && product.stock !== 'out of stock') {
+            addItem(product, quantity);
+            onClose();
+        }
+    }, [product, quantity, addItem, onClose]);
+
+    // Early return AFTER all hooks are called
     if (!product) return null;
 
-    const isOutOfStock = product.stock === 0;
-    const maxQuantity = Math.min(product.stock, 10);
+    const isOutOfStock = product.stock === 'out of stock';
+    const maxQuantity = 10; // Set a reasonable max quantity
+
+    // Parse available sizes and check stock
+    const getAvailableSizes = () => {
+        if (
+            !product?.foot_numbers ||
+            typeof product.foot_numbers !== 'string'
+        ) {
+            return [];
+        }
+
+        try {
+            const allSizes = product.foot_numbers
+                .split(',')
+                .map((size) => size.trim())
+                .filter((size) => size.length > 0);
+
+            // Return simple size objects - always show sizes if they exist
+            return allSizes.map((size) => ({
+                size,
+                stock: 10, // Default stock
+                available: true, // Always available for now
+            }));
+        } catch (error) {
+            console.error('Error parsing sizes:', error);
+            return [];
+        }
+    };
+
+    const sizeInfo = getAvailableSizes();
+    const availableSizes = sizeInfo.filter((info) => info.available);
 
     return (
         <div
@@ -141,9 +173,9 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                 <span className="font-semibold text-red-600">
                                     Out of Stock
                                 </span>
-                            ) : product.stock <= 5 ? (
+                            ) : product.stock === 'low stock' ? (
                                 <span className="font-semibold text-[#771E49]">
-                                    Only {product.stock} left in stock
+                                    Low Stock
                                 </span>
                             ) : (
                                 <span className="font-semibold text-green-600">
@@ -151,6 +183,39 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                 </span>
                             )}
                         </div>
+
+                        {/* Size Availability */}
+                        {product.foot_numbers && (
+                            <div className="mb-6">
+                                <h4 className="mb-3 text-sm font-semibold text-gray-700">
+                                    Available Sizes (EU):
+                                </h4>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {sizeInfo.map((sizeItem) => (
+                                        <button
+                                            key={sizeItem.size}
+                                            onClick={() =>
+                                                setSelectedSize(sizeItem.size)
+                                            }
+                                            className={`relative rounded-lg border p-3 text-center transition-all ${
+                                                selectedSize === sizeItem.size
+                                                    ? 'border-[#771E49] bg-[#771E49] text-white'
+                                                    : 'cursor-pointer border-gray-300 bg-white hover:border-[#771E49] hover:bg-[#771E49]/5'
+                                            }`}
+                                        >
+                                            <span className="text-sm font-medium">
+                                                {sizeItem.size}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                                {selectedSize && (
+                                    <p className="mt-2 text-sm text-[#771E49]">
+                                        Selected size: EU {selectedSize}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Quantity Selector */}
                         {!isOutOfStock && (
