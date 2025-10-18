@@ -48,6 +48,11 @@ const fetchProducts = async (
     if (filters.priceMax < 1000) {
         params.append('price_max', filters.priceMax.toString());
     }
+    if (filters.gender && filters.gender.length > 0) {
+        filters.gender.forEach((gender) => {
+            params.append('gender[]', gender);
+        });
+    }
     if (filters.sortBy) {
         params.append('sort_by', filters.sortBy);
     }
@@ -74,6 +79,9 @@ const fetchProducts = async (
                     `https://picsum.photos/seed/${product.id}/400/400`,
                 rating: Math.floor(Math.random() * 20 + 30) / 10, // Random rating since it's not in your schema
                 stock: product.stock || 0,
+                foot_numbers: product.foot_numbers, // Added missing foot_numbers field
+                color: product.color, // Also added color field for completeness
+                gender: product.gender || 'unisex', // Added gender field
                 categories: product.category ? [product.category] : [],
                 created_at: product.created_at,
             })),
@@ -105,8 +113,6 @@ const fetchCategories = async (): Promise<Category[]> => {
 
         const data = await response.json();
 
-        // Since the API now returns Laravel pagination object directly,
-        // categories are in data.data
         return data.data.map((category: any) => ({
             id: category.id,
             name: category.name,
@@ -114,7 +120,7 @@ const fetchCategories = async (): Promise<Category[]> => {
         }));
     } catch (error) {
         console.error('Error fetching categories:', error);
-        // Fallback to default categories if API fails
+
         return [
             { id: 1, name: 'Running', slug: 'running' },
             { id: 2, name: 'Casual', slug: 'casual' },

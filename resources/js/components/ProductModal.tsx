@@ -17,6 +17,7 @@ interface Product {
     stock: 'in stock' | 'out of stock' | 'low stock';
     foot_numbers?: string;
     color?: string;
+    gender?: 'male' | 'female' | 'unisex';
     category?: Category;
     category_id?: number;
 }
@@ -38,6 +39,8 @@ interface FormData {
     foot_numbers: string;
     color: string;
     category_id: number | '';
+    gender: 'male' | 'female' | 'unisex';
+    sizeStocks: Record<string, number>; // New field for size-specific stock
 }
 
 export default function ProductModal({
@@ -56,6 +59,8 @@ export default function ProductModal({
         foot_numbers: product?.foot_numbers || '',
         color: product?.color || '',
         category_id: product?.category_id || product?.category?.id || '',
+        gender: product?.gender || 'unisex',
+        sizeStocks: {},
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,6 +79,8 @@ export default function ProductModal({
                 color: product?.color || '',
                 category_id:
                     product?.category_id || product?.category?.id || '',
+                gender: product?.gender || 'unisex',
+                sizeStocks: {},
             });
             setErrors({});
         }
@@ -165,6 +172,66 @@ export default function ProductModal({
             setErrors((prev) => ({ ...prev, [field]: [] }));
         }
     };
+
+    // Helper function to parse sizes from foot_numbers string
+    const parseSizes = (sizeString: string): string[] => {
+        return sizeString
+            .split(',')
+            .map((size) => size.trim())
+            .filter((size) => size.length > 0);
+    };
+
+    // Helper function to handle size stock changes
+    const handleSizeStockChange = (size: string, stock: number) => {
+        setFormData((prev) => ({
+            ...prev,
+            sizeStocks: {
+                ...prev.sizeStocks,
+                [size]: stock,
+            },
+        }));
+    };
+
+    // Helper function to remove a size from stock tracking
+    const removeSizeStock = (size: string) => {
+        setFormData((prev) => {
+            const newSizeStocks = { ...prev.sizeStocks };
+            delete newSizeStocks[size];
+            return {
+                ...prev,
+                sizeStocks: newSizeStocks,
+            };
+        });
+    };
+
+    // Get sizes from foot_numbers
+    const availableSizes = parseSizes(formData.foot_numbers);
+
+    // Helper function to auto-populate size stocks based on general stock status
+    const autoPopulateSizeStocks = () => {
+        const defaultQuantity =
+            formData.stock === 'in stock'
+                ? 10
+                : formData.stock === 'low stock'
+                  ? 3
+                  : 0;
+
+        const newSizeStocks: Record<string, number> = {};
+        availableSizes.forEach((size) => {
+            newSizeStocks[size] = defaultQuantity;
+        });
+
+        setFormData((prev) => ({
+            ...prev,
+            sizeStocks: newSizeStocks,
+        }));
+    };
+
+    // Calculate total stock from individual size stocks
+    const totalSizeStock = Object.values(formData.sizeStocks).reduce(
+        (sum, stock) => sum + stock,
+        0,
+    );
 
     if (!isOpen) return null;
 
@@ -274,6 +341,33 @@ export default function ProductModal({
                                 )}
                             </div>
 
+                            {/* Gender */}
+                            <div>
+                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                    Gender *
+                                </label>
+                                <select
+                                    value={formData.gender}
+                                    onChange={(e) =>
+                                        handleInputChange(
+                                            'gender',
+                                            e.target.value as any,
+                                        )
+                                    }
+                                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-rose-500 focus:ring-1 focus:ring-rose-500 focus:outline-none"
+                                    required
+                                >
+                                    <option value="unisex">Unisex</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                </select>
+                                {errors.gender && (
+                                    <p className="mt-1 text-sm text-red-600">
+                                        {errors.gender[0]}
+                                    </p>
+                                )}
+                            </div>
+
                             {/* Color */}
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -321,6 +415,89 @@ export default function ProductModal({
                                     </p>
                                 )}
                             </div>
+
+                            {/* Size-Specific Stock Management */}
+                            {availableSizes.length > 0 && (
+                                <div className="sm:col-span-2">
+                                    <div className="mb-2 flex items-center justify-between">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Stock Quantity per Size
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={autoPopulateSizeStocks}
+                                            className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-600 hover:bg-blue-100"
+                                        >
+                                            Auto-fill based on stock status
+                                        </button>
+                                    </div>
+                                    <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-gray-200 bg-gray-50 p-3">
+                                        {availableSizes.map((size) => (
+                                            <div
+                                                key={size}
+                                                className="flex items-center justify-between rounded border bg-white p-2"
+                                            >
+                                                <div className="flex flex-1 items-center gap-3">
+                                                    <span className="min-w-[40px] text-sm font-medium text-gray-700">
+                                                        Size {size}:
+                                                    </span>
+                                                    <input
+                                                        type="number"
+                                                        min="0"
+                                                        value={
+                                                            formData.sizeStocks[
+                                                                size
+                                                            ] || 0
+                                                        }
+                                                        onChange={(e) =>
+                                                            handleSizeStockChange(
+                                                                size,
+                                                                parseInt(
+                                                                    e.target
+                                                                        .value,
+                                                                ) || 0,
+                                                            )
+                                                        }
+                                                        className="w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:border-rose-500 focus:ring-1 focus:ring-rose-500 focus:outline-none"
+                                                        placeholder="0"
+                                                    />
+                                                    <span className="text-xs text-gray-500">
+                                                        units
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        removeSizeStock(size)
+                                                    }
+                                                    className="rounded px-2 py-1 text-sm text-red-500 hover:bg-red-50 hover:text-red-700"
+                                                    title={`Remove size ${size}`}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {availableSizes.length === 0 && (
+                                            <p className="py-2 text-center text-sm text-gray-500">
+                                                Add sizes above to manage stock
+                                                quantities
+                                            </p>
+                                        )}
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        Set individual stock quantities for each
+                                        size. Leave empty or 0 for out of stock.
+                                    </p>
+                                    {totalSizeStock > 0 && (
+                                        <div className="mt-2 rounded border border-blue-200 bg-blue-50 p-2">
+                                            <p className="text-sm font-medium text-blue-800">
+                                                Total Stock: {totalSizeStock}{' '}
+                                                units across all sizes
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Image URL */}
                             <div className="sm:col-span-2">

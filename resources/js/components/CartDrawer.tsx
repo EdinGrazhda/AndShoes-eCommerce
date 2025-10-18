@@ -127,8 +127,8 @@ export const CartDrawer = memo(() => {
                                                     )
                                                 }
                                                 disabled={
-                                                    item.quantity >=
-                                                    item.product.stock
+                                                    item.product.stock ===
+                                                    'out of stock'
                                                 }
                                                 className="rounded p-1 transition-colors hover:bg-white focus:ring-2 focus:ring-[#771E49] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                                 aria-label={`Increase quantity of ${item.product.name}`}

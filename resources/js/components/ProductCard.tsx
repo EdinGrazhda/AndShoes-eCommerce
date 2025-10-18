@@ -20,7 +20,7 @@ export const ProductCard = memo(
         const handleAddToCart = useCallback(
             (e: React.MouseEvent) => {
                 e.stopPropagation();
-                if (product.stock > 0) {
+                if (product.stock !== 'out of stock') {
                     addItem(product);
                 }
             },
@@ -31,8 +31,30 @@ export const ProductCard = memo(
             onQuickView?.(product);
         }, [onQuickView, product]);
 
-        const isLowStock = product.stock > 0 && product.stock <= 5;
-        const isOutOfStock = product.stock === 0;
+        const isLowStock = product.stock === 'low stock';
+        const isOutOfStock = product.stock === 'out of stock';
+
+        // Parse available sizes and check stock
+        const getAvailableSizes = () => {
+            if (!product.foot_numbers) return [];
+
+            const allSizes = product.foot_numbers
+                .split(',')
+                .map((size) => size.trim())
+                .filter((size) => size.length > 0);
+
+            // If we have size-specific stock data, filter by availability
+            if (product.sizeStocks) {
+                return allSizes.filter(
+                    (size) => (product.sizeStocks![size] || 0) > 0,
+                );
+            }
+
+            // Otherwise, show all sizes if product is in stock
+            return isOutOfStock ? [] : allSizes;
+        };
+
+        const availableSizes = getAvailableSizes();
 
         return (
             <article
@@ -86,6 +108,27 @@ export const ProductCard = memo(
                         {product.name}
                     </h3>
 
+                    {/* Gender Badge */}
+                    {product.gender && (
+                        <div className="mb-2">
+                            <span
+                                className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                                    product.gender === 'male'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : product.gender === 'female'
+                                          ? 'bg-pink-100 text-pink-800'
+                                          : 'bg-gray-100 text-gray-800'
+                                }`}
+                            >
+                                {product.gender === 'male'
+                                    ? 'Male'
+                                    : product.gender === 'female'
+                                      ? 'Female'
+                                      : 'Unisex'}
+                            </span>
+                        </div>
+                    )}
+
                     {/* Rating */}
                     <div
                         className="mb-2 flex items-center gap-1"
@@ -107,6 +150,60 @@ export const ProductCard = memo(
                             ({product.rating.toFixed(1)})
                         </span>
                     </div>
+
+                    {/* Available Sizes */}
+                    {availableSizes.length > 0 && (
+                        <div className="mb-2">
+                            <p className="mb-1 text-xs text-gray-500">
+                                Available sizes:
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                                {availableSizes.slice(0, 4).map((size) => {
+                                    const sizeStock =
+                                        product.sizeStocks?.[size] || 0;
+                                    const isLowSizeStock =
+                                        sizeStock > 0 && sizeStock <= 3;
+
+                                    return (
+                                        <span
+                                            key={size}
+                                            className={`inline-block rounded border px-1.5 py-0.5 text-xs ${
+                                                isLowSizeStock
+                                                    ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
+                                                    : 'border-gray-200 bg-gray-100 text-gray-700'
+                                            }`}
+                                            title={
+                                                sizeStock > 0
+                                                    ? `${sizeStock} in stock`
+                                                    : 'In stock'
+                                            }
+                                        >
+                                            {size}
+                                            {isLowSizeStock && (
+                                                <span className="ml-1 text-[10px]">
+                                                    ●
+                                                </span>
+                                            )}
+                                        </span>
+                                    );
+                                })}
+                                {availableSizes.length > 4 && (
+                                    <span className="text-xs text-gray-500">
+                                        +{availableSizes.length - 4} more
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Out of stock message for sizes */}
+                    {availableSizes.length === 0 && product.foot_numbers && (
+                        <div className="mb-2">
+                            <span className="text-xs text-red-500">
+                                No sizes currently in stock
+                            </span>
+                        </div>
+                    )}
 
                     {/* Price and Action */}
                     <div className="mt-3 flex items-center justify-between">

@@ -28,6 +28,7 @@ interface Product {
     stock: 'in stock' | 'out of stock' | 'low stock';
     foot_numbers?: string;
     color?: string;
+    gender?: 'male' | 'female' | 'unisex';
     category?: Category;
     category_id?: number;
     created_at?: string;
@@ -380,6 +381,9 @@ export default function Products({
                                                 Color
                                             </th>
                                             <th className="px-8 py-6 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                Gender
+                                            </th>
+                                            <th className="px-8 py-6 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                 Sizes
                                             </th>
                                             <th className="px-8 py-6 text-right text-xs font-bold tracking-wider text-gray-700 uppercase">
@@ -499,6 +503,29 @@ export default function Products({
                                                             </span>
                                                         )}
                                                     </div>
+                                                </td>
+
+                                                {/* Gender */}
+                                                <td className="px-8 py-6 whitespace-nowrap">
+                                                    <span
+                                                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                                            product.gender ===
+                                                            'male'
+                                                                ? 'bg-blue-100 text-blue-800'
+                                                                : product.gender ===
+                                                                    'female'
+                                                                  ? 'bg-pink-100 text-pink-800'
+                                                                  : 'bg-gray-100 text-gray-800'
+                                                        }`}
+                                                    >
+                                                        {product.gender ===
+                                                        'male'
+                                                            ? 'Male'
+                                                            : product.gender ===
+                                                                'female'
+                                                              ? 'Female'
+                                                              : 'Unisex'}
+                                                    </span>
                                                 </td>
 
                                                 {/* Sizes */}

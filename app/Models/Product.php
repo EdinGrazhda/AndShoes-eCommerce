@@ -15,7 +15,8 @@ class Product extends Model
         'stock', 
         'foot_numbers', 
         'color',
-        'category_id'
+        'category_id',
+        'gender'
     ];
 
     public function category()

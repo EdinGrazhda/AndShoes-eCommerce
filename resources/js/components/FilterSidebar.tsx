@@ -192,6 +192,64 @@ export const FilterSidebar = memo(
                             </div>
                         </div>
 
+                        {/* Gender Filter */}
+                        <div>
+                            <label className="mb-3 block text-sm font-semibold text-white">
+                                Gender
+                                {filters.gender &&
+                                    filters.gender.length > 0 && (
+                                        <span className="ml-2 text-white/80">
+                                            ({filters.gender.length})
+                                        </span>
+                                    )}
+                            </label>
+                            <div className="space-y-2">
+                                {[
+                                    { value: 'male', label: 'Male' },
+                                    { value: 'female', label: 'Female' },
+                                    { value: 'unisex', label: 'Unisex' },
+                                ].map((genderOption) => (
+                                    <label
+                                        key={genderOption.value}
+                                        className="group flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-white/10"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={
+                                                filters.gender?.includes(
+                                                    genderOption.value,
+                                                ) || false
+                                            }
+                                            onChange={() => {
+                                                const currentGenders =
+                                                    filters.gender || [];
+                                                const newGenders =
+                                                    currentGenders.includes(
+                                                        genderOption.value,
+                                                    )
+                                                        ? currentGenders.filter(
+                                                              (g) =>
+                                                                  g !==
+                                                                  genderOption.value,
+                                                          )
+                                                        : [
+                                                              ...currentGenders,
+                                                              genderOption.value,
+                                                          ];
+                                                onFilterChange({
+                                                    gender: newGenders,
+                                                });
+                                            }}
+                                            className="h-4 w-4 rounded border-white/30 bg-white/10 text-white focus:ring-white focus:ring-offset-0"
+                                        />
+                                        <span className="text-sm text-white group-hover:text-white">
+                                            {genderOption.label}
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+
                         {/* Categories */}
                         <div>
                             <label className="mb-3 block text-sm font-semibold text-white">

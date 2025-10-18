@@ -38,10 +38,7 @@ export const useCartStore = create<CartStore>()(
                                 item.product.id === product.id
                                     ? {
                                           ...item,
-                                          quantity: Math.min(
-                                              item.quantity + quantity,
-                                              product.stock,
-                                          ),
+                                          quantity: item.quantity + quantity,
                                       }
                                     : item,
                             ),
@@ -54,7 +51,7 @@ export const useCartStore = create<CartStore>()(
                             ...state.items,
                             {
                                 product,
-                                quantity: Math.min(quantity, product.stock),
+                                quantity: quantity,
                             },
                         ],
                         isOpen: true,
@@ -85,10 +82,7 @@ export const useCartStore = create<CartStore>()(
                             item.product.id === productId
                                 ? {
                                       ...item,
-                                      quantity: Math.min(
-                                          quantity,
-                                          item.product.stock,
-                                      ),
+                                      quantity: quantity,
                                   }
                                 : item,
                         ),
