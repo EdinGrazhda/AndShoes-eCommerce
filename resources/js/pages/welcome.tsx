@@ -20,138 +20,106 @@ import type {
     Product,
 } from '../types/store';
 
-// Mock data generator for demonstration
-const generateMockProducts = (count: number = 1000): Product[] => {
-    const categories: Category[] = [
-        { id: 1, name: 'Running', slug: 'running' },
-        { id: 2, name: 'Casual', slug: 'casual' },
-        { id: 3, name: 'Formal', slug: 'formal' },
-        { id: 4, name: 'Sports', slug: 'sports' },
-        { id: 5, name: 'Boots', slug: 'boots' },
-        { id: 6, name: 'Sandals', slug: 'sandals' },
-        { id: 7, name: 'Sneakers', slug: 'sneakers' },
-        { id: 8, name: 'Loafers', slug: 'loafers' },
-    ];
-
-    const adjectives = [
-        'Premium',
-        'Classic',
-        'Modern',
-        'Elegant',
-        'Sporty',
-        'Luxury',
-        'Comfort',
-        'Professional',
-    ];
-    const types = [
-        'Runner',
-        'Walker',
-        'Trainer',
-        'Oxford',
-        'Derby',
-        'Loafer',
-        'Sneaker',
-        'Boot',
-    ];
-
-    return Array.from({ length: count }, (_, i) => {
-        const randomCategories = categories
-            .sort(() => Math.random() - 0.5)
-            .slice(0, Math.floor(Math.random() * 3) + 1);
-
-        return {
-            id: i + 1,
-            name: `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${types[Math.floor(Math.random() * types.length)]} ${i + 1}`,
-            description: `Experience ultimate comfort and style with these premium shoes. Crafted with attention to detail and designed for everyday wear.`,
-            price: Math.floor(Math.random() * 200) + 30,
-            image: `https://picsum.photos/seed/${i + 1}/400/400`,
-            rating: Math.floor(Math.random() * 20 + 30) / 10,
-            stock: Math.floor(Math.random() * 50),
-            categories: randomCategories,
-            created_at: new Date(
-                Date.now() - Math.random() * 10000000000,
-            ).toISOString(),
-        };
-    });
-};
-
-// Mock API functions
-const mockProducts = generateMockProducts(1000);
-
+// Real API functions to fetch data from your Laravel backend
 const fetchProducts = async (
     page: number,
     filters: Filters,
 ): Promise<PaginatedResponse<Product>> => {
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Simulate network delay for UX (optional)
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
-    let filtered = [...mockProducts];
+    const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: '20',
+    });
 
+    // Add filters to the request
     if (filters.search) {
-        const searchLower = filters.search.toLowerCase();
-        filtered = filtered.filter((p) =>
-            p.name.toLowerCase().includes(searchLower),
-        );
+        params.append('search', filters.search);
     }
-
     if (filters.categories.length > 0) {
-        filtered = filtered.filter((p) =>
-            p.categories.some((cat) => filters.categories.includes(cat.id)),
-        );
+        filters.categories.forEach((categoryId) => {
+            params.append('category[]', categoryId.toString());
+        });
+    }
+    if (filters.priceMin > 0) {
+        params.append('price_min', filters.priceMin.toString());
+    }
+    if (filters.priceMax < 1000) {
+        params.append('price_max', filters.priceMax.toString());
+    }
+    if (filters.sortBy) {
+        params.append('sort_by', filters.sortBy);
     }
 
-    filtered = filtered.filter(
-        (p) => p.price >= filters.priceMin && p.price <= filters.priceMax,
-    );
+    try {
+        const response = await fetch(`/api/products?${params.toString()}`);
 
-    switch (filters.sortBy) {
-        case 'price-asc':
-            filtered.sort((a, b) => a.price - b.price);
-            break;
-        case 'price-desc':
-            filtered.sort((a, b) => b.price - a.price);
-            break;
-        case 'rating':
-            filtered.sort((a, b) => b.rating - a.rating);
-            break;
-        case 'newest':
-        default:
-            filtered.sort(
-                (a, b) =>
-                    new Date(b.created_at).getTime() -
-                    new Date(a.created_at).getTime(),
-            );
-            break;
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Transform the data to match your Product interface
+        return {
+            data: data.data.map((product: any) => ({
+                id: product.id,
+                name: product.name,
+                description: product.description,
+                price: parseFloat(product.price),
+                image:
+                    product.image ||
+                    `https://picsum.photos/seed/${product.id}/400/400`,
+                rating: Math.floor(Math.random() * 20 + 30) / 10, // Random rating since it's not in your schema
+                stock: product.stock || 0,
+                categories: product.category ? [product.category] : [],
+                created_at: product.created_at,
+            })),
+            current_page: data.current_page,
+            last_page: data.last_page,
+            per_page: data.per_page,
+            total: data.total,
+        };
+    } catch (error) {
+        console.error('Error fetching products:', error);
+        // Fallback to empty results if API fails
+        return {
+            data: [],
+            current_page: page,
+            last_page: 1,
+            per_page: 20,
+            total: 0,
+        };
     }
-
-    const perPage = 20;
-    const start = (page - 1) * perPage;
-    const end = start + perPage;
-    const paginatedData = filtered.slice(start, end);
-
-    return {
-        data: paginatedData,
-        current_page: page,
-        last_page: Math.ceil(filtered.length / perPage),
-        per_page: perPage,
-        total: filtered.length,
-    };
 };
 
 const fetchCategories = async (): Promise<Category[]> => {
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    try {
+        const response = await fetch('/api/categories');
 
-    return [
-        { id: 1, name: 'Running', slug: 'running' },
-        { id: 2, name: 'Casual', slug: 'casual' },
-        { id: 3, name: 'Formal', slug: 'formal' },
-        { id: 4, name: 'Sports', slug: 'sports' },
-        { id: 5, name: 'Boots', slug: 'boots' },
-        { id: 6, name: 'Sandals', slug: 'sandals' },
-        { id: 7, name: 'Sneakers', slug: 'sneakers' },
-        { id: 8, name: 'Loafers', slug: 'loafers' },
-    ];
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Transform categories to match your interface
+        return data.map((category: any) => ({
+            id: category.id,
+            name: category.name,
+            slug: category.name.toLowerCase().replace(/\s+/g, '-'),
+        }));
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to default categories if API fails
+        return [
+            { id: 1, name: 'Running', slug: 'running' },
+            { id: 2, name: 'Casual', slug: 'casual' },
+            { id: 3, name: 'Formal', slug: 'formal' },
+            { id: 4, name: 'Sports', slug: 'sports' },
+        ];
+    }
 };
 
 /**

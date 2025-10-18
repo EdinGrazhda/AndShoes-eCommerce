@@ -40,19 +40,8 @@ class CategoryController extends Controller
 
             $categories = $query->paginate($perPage);
 
-            return response()->json([
-                'success' => true,
-                'data' => $categories->items(),
-                'pagination' => [
-                    'current_page' => $categories->currentPage(),
-                    'last_page' => $categories->lastPage(),
-                    'per_page' => $categories->perPage(),
-                    'total' => $categories->total(),
-                    'from' => $categories->firstItem(),
-                    'to' => $categories->lastItem(),
-                ],
-                'message' => 'Categories retrieved successfully'
-            ]);
+            // Return data in the format expected by frontend
+            return response()->json($categories, 200);
 
         } catch (Exception $e) {
             Log::error('Error fetching categories: ' . $e->getMessage());

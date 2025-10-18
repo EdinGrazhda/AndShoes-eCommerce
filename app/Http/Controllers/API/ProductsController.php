@@ -55,6 +55,21 @@ class ProductsController extends Controller
             $sortBy = $request->get('sort_by', 'created_at');
             $sortOrder = $request->get('sort_order', 'desc');
             
+            // Handle frontend sorting format
+            if ($sortBy === 'price-asc') {
+                $sortBy = 'price';
+                $sortOrder = 'asc';
+            } elseif ($sortBy === 'price-desc') {
+                $sortBy = 'price';
+                $sortOrder = 'desc';
+            } elseif ($sortBy === 'rating') {
+                $sortBy = 'created_at'; // Since we don't have rating, use created_at
+                $sortOrder = 'desc';
+            } elseif ($sortBy === 'newest') {
+                $sortBy = 'created_at';
+                $sortOrder = 'desc';
+            }
+            
             $allowedSortFields = ['name', 'price', 'stock', 'color', 'created_at'];
             if (in_array($sortBy, $allowedSortFields)) {
                 $query->orderBy($sortBy, $sortOrder);
@@ -62,15 +77,17 @@ class ProductsController extends Controller
                 $query->orderBy('created_at', 'desc');
             }
 
+            // Handle multiple categories filter
+            if ($request->has('category') && is_array($request->category)) {
+                $query->whereIn('category_id', $request->category);
+            }
+
             // Pagination
             $perPage = min($request->get('per_page', 20), 100); // Max 100 items per page
             $products = $query->paginate($perPage);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Products retrieved successfully',
-                'data' => $products
-            ], 200);
+            // Return paginated data in the format expected by frontend
+            return response()->json($products, 200);
 
         } catch (Exception $e) {
             Log::error('Error fetching products: ' . $e->getMessage(), [
