@@ -1,6 +1,8 @@
 import { Minus, Plus, Trash2, X } from 'lucide-react';
 import { memo } from 'react';
+import { toast } from 'react-hot-toast';
 import { useCartStore } from '../store/cartStore';
+import { useCheckoutStore } from '../store/checkoutStore';
 
 /**
  * Sliding cart drawer with item management
@@ -16,6 +18,25 @@ export const CartDrawer = memo(() => {
         totalPrice,
         clearCart,
     } = useCartStore();
+
+    const { openCheckout } = useCheckoutStore();
+
+    const handleCheckout = () => {
+        if (items.length === 0) {
+            toast.error('Your cart is empty');
+            return;
+        }
+
+        // For now, we'll use the first item in the cart for checkout
+        // In a real application, you might want to handle multiple items differently
+        const firstItem = items[0];
+
+        // Close the cart drawer
+        closeCart();
+
+        // Open checkout modal with the product
+        openCheckout(firstItem.product);
+    };
 
     if (!isOpen) return null;
 
@@ -166,6 +187,7 @@ export const CartDrawer = memo(() => {
                         {/* Actions */}
                         <div className="space-y-2">
                             <button
+                                onClick={handleCheckout}
                                 className="w-full rounded-lg bg-[#771E49] py-3 font-semibold text-white transition-colors hover:bg-[#5a1738] focus:ring-2 focus:ring-[#771E49] focus:ring-offset-2 focus:outline-none"
                                 aria-label="Proceed to checkout"
                             >
