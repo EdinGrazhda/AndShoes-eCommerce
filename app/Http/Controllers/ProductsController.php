@@ -23,29 +23,25 @@ class ProductsController extends Controller
         $categoryData = json_decode($categoryResponse->getContent(), true);
 
         // Extract the actual data from the API response
+        // Since API now returns Laravel pagination object directly
         $products = [];
         $pagination = null;
         
-        if ($apiData['success'] && isset($apiData['data'])) {
-            if (isset($apiData['data']['data'])) {
-                // Paginated data
-                $products = $apiData['data']['data'];
-                $pagination = [
-                    'current_page' => $apiData['data']['current_page'] ?? 1,
-                    'last_page' => $apiData['data']['last_page'] ?? 1,
-                    'per_page' => $apiData['data']['per_page'] ?? 20,
-                    'total' => $apiData['data']['total'] ?? 0,
-                    'from' => $apiData['data']['from'],
-                    'to' => $apiData['data']['to']
-                ];
-            } else {
-                // Direct data array
-                $products = $apiData['data'];
-            }
+        if (isset($apiData['data'])) {
+            // Paginated data - Laravel pagination format
+            $products = $apiData['data'];
+            $pagination = [
+                'current_page' => $apiData['current_page'] ?? 1,
+                'last_page' => $apiData['last_page'] ?? 1,
+                'per_page' => $apiData['per_page'] ?? 20,
+                'total' => $apiData['total'] ?? 0,
+                'from' => $apiData['from'],
+                'to' => $apiData['to']
+            ];
         }
 
         $categories = [];
-        if ($categoryData['success'] && isset($categoryData['data'])) {
+        if (isset($categoryData['data'])) {
             $categories = $categoryData['data'];
         }
 

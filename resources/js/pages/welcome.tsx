@@ -61,7 +61,8 @@ const fetchProducts = async (
 
         const data = await response.json();
 
-        // Transform the data to match your Product interface
+        // Since the API now returns Laravel pagination object directly,
+        // the products are in data.data
         return {
             data: data.data.map((product: any) => ({
                 id: product.id,
@@ -104,8 +105,9 @@ const fetchCategories = async (): Promise<Category[]> => {
 
         const data = await response.json();
 
-        // Transform categories to match your interface
-        return data.map((category: any) => ({
+        // Since the API now returns Laravel pagination object directly,
+        // categories are in data.data
+        return data.data.map((category: any) => ({
             id: category.id,
             name: category.name,
             slug: category.name.toLowerCase().replace(/\s+/g, '-'),
