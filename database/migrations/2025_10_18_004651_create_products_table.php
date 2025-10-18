@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('stock')->default('in stock')->index(); // Index for stock status filtering
             $table->string('foot_numbers')->nullable()->index(); // Index for size filtering
             $table->string('color')->nullable()->index(); // Index for color filtering
+            $table->foreignId('category_id')->constrained('categories')->onDelete('cascade'); // Foreign key to categories
             $table->timestamps();
             
             // Composite index for common query patterns
@@ -33,6 +34,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('products');
+        Schema::enableForeignKeyConstraints();
     }
 };
