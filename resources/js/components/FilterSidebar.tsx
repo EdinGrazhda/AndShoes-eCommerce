@@ -142,127 +142,53 @@ export const FilterSidebar = memo(
                             <label className="mb-3 block text-sm font-semibold text-white">
                                 Price Range
                             </label>
-                            <div className="space-y-4">
-                                {/* Price Display */}
-                                <div className="flex items-center justify-between text-sm font-medium text-white">
-                                    <span>€{filters.priceMin.toFixed(2)}</span>
-                                    <span className="text-white/60">—</span>
-                                    <span>€{filters.priceMax.toFixed(2)}</span>
-                                </div>
 
-                                {/* Dual Range Slider */}
-                                <div className="relative pt-2 pb-4">
-                                    {/* Track Background */}
-                                    <div className="absolute top-1/2 right-0 left-0 h-1 -translate-y-1/2 rounded-full bg-white/30" />
-
-                                    {/* Active Track */}
-                                    <div
-                                        className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-white"
-                                        style={{
-                                            left: `${(filters.priceMin / 10000) * 100}%`,
-                                            right: `${100 - (filters.priceMax / 10000) * 100}%`,
-                                        }}
-                                    />
-
-                                    {/* Min Range Input */}
-                                    <input
-                                        id="priceMin"
-                                        type="range"
-                                        min="0"
-                                        max="10000"
-                                        step="10"
-                                        value={filters.priceMin}
-                                        onChange={(e) => {
-                                            const value = Number(
-                                                e.target.value,
-                                            );
-                                            if (value < filters.priceMax) {
-                                                onFilterChange({
-                                                    priceMin: value,
-                                                });
-                                            }
-                                        }}
-                                        className="pointer-events-none absolute h-1 w-full appearance-none bg-transparent [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#771E49] [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-transform [&::-moz-range-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#771E49] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
-                                        style={{
-                                            zIndex:
-                                                filters.priceMin > 10000 - 100
-                                                    ? 5
-                                                    : 3,
-                                        }}
-                                        aria-label="Minimum price"
-                                    />
-
-                                    {/* Max Range Input */}
-                                    <input
-                                        id="priceMax"
-                                        type="range"
-                                        min="0"
-                                        max="10000"
-                                        step="10"
-                                        value={filters.priceMax}
-                                        onChange={(e) => {
-                                            const value = Number(
-                                                e.target.value,
-                                            );
-                                            if (value > filters.priceMin) {
-                                                onFilterChange({
-                                                    priceMax: value,
-                                                });
-                                            }
-                                        }}
-                                        className="pointer-events-none absolute h-1 w-full appearance-none bg-transparent [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-[#771E49] [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:transition-transform [&::-moz-range-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#771E49] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110"
-                                        style={{ zIndex: 4 }}
-                                        aria-label="Maximum price"
-                                    />
-                                </div>
-
-                                {/* Optional: Quick Select Buttons */}
-                                <div className="flex flex-wrap gap-2">
-                                    <button
-                                        onClick={() =>
-                                            onFilterChange({
-                                                priceMin: 0,
-                                                priceMax: 50,
-                                            })
-                                        }
-                                        className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/30"
-                                    >
-                                        Under €50
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            onFilterChange({
-                                                priceMin: 50,
-                                                priceMax: 100,
-                                            })
-                                        }
-                                        className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/30"
-                                    >
-                                        €50 - €100
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            onFilterChange({
-                                                priceMin: 100,
-                                                priceMax: 200,
-                                            })
-                                        }
-                                        className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/30"
-                                    >
-                                        €100 - €200
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            onFilterChange({
-                                                priceMin: 200,
-                                                priceMax: 10000,
-                                            })
-                                        }
-                                        className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/30"
-                                    >
-                                        €200+
-                                    </button>
-                                </div>
+                            {/* Quick Select Buttons */}
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    onClick={() =>
+                                        onFilterChange({
+                                            priceMin: 0,
+                                            priceMax: 50,
+                                        })
+                                    }
+                                    className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/30"
+                                >
+                                    Under €50
+                                </button>
+                                <button
+                                    onClick={() =>
+                                        onFilterChange({
+                                            priceMin: 50,
+                                            priceMax: 100,
+                                        })
+                                    }
+                                    className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/30"
+                                >
+                                    €50 - €100
+                                </button>
+                                <button
+                                    onClick={() =>
+                                        onFilterChange({
+                                            priceMin: 100,
+                                            priceMax: 200,
+                                        })
+                                    }
+                                    className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/30"
+                                >
+                                    €100 - €200
+                                </button>
+                                <button
+                                    onClick={() =>
+                                        onFilterChange({
+                                            priceMin: 200,
+                                            priceMax: 10000,
+                                        })
+                                    }
+                                    className="rounded-full bg-white/20 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-white/30"
+                                >
+                                    €200+
+                                </button>
                             </div>
                         </div>
 

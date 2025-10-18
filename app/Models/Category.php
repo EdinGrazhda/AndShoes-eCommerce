@@ -6,11 +6,28 @@ use Illuminate\Database\Eloquent\Model;
 
 class Category extends Model
 {
-    protected $fillable = ['name', 'description', 'product_id'];
+   protected $fillable = [
+       'name', 
+       'slug', 
+       'description', 
+       'parent_id', 
+       'sort_order', 
+       'is_active'
+   ];
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
-    
+   protected $casts = [
+       'is_active' => 'boolean',
+   ];
+
+   public function products()
+   {
+       return $this->belongsToMany(Product::class, 'product_category');
+   }
+
+   
+
+ 
+
+ 
+
 }

@@ -7,19 +7,29 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
    
-    protected $fillable = ['name', 'description', 'price', 'stock', 'image_url'];
+    protected $fillable = [
+        'name', 
+        'description', 
+        'price', 
+        'image', 
+        'stock', 
+        'foot_numbers', 
+        'color',
+        'category_id'
+    ];
 
-    public function orders()
+    public function category()
     {
-        return $this->hasMany(Orders::class);
+        return $this->belongsTo(Category::class);
     }
-    public function categories()
-    {
-        return $this->hasMany(Category::class);
-    }
+
     public function campaigns()
     {
-        return $this->belongsToMany(Campaign::class, 'campaign_product');
+        return $this->hasMany(Campaign::class);
     }
 
+    public function cartItems()
+    {
+        return $this->hasMany(CartItems::class);
+    }
 }
