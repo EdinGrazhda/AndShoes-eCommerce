@@ -19,6 +19,10 @@ class Product extends Model
         'gender'
     ];
 
+    protected $casts = [
+        'price' => 'decimal:2',
+    ];
+
     public function category()
     {
         return $this->belongsTo(Category::class);

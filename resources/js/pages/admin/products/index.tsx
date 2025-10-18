@@ -2,7 +2,16 @@ import ProductModal from '@/components/ProductModal';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Edit, Filter, Package, Plus, Search, Trash2, X } from 'lucide-react';
+import {
+    Edit,
+    Filter,
+    Package,
+    Plus,
+    Search,
+    ShoppingCart,
+    Trash2,
+    X,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -143,6 +152,14 @@ export default function Products({
     const handleDeleteProduct = (product: Product) => {
         setSelectedProduct(product);
         setShowDeleteModal(true);
+    };
+
+    const handleQuickCheckout = (product: Product) => {
+        if (product.stock === 'out of stock') {
+            toast.error('This product is currently out of stock');
+            return;
+        }
+        router.visit(`/checkout/${product.id}`);
     };
 
     const confirmDelete = async () => {
@@ -538,16 +555,34 @@ export default function Products({
 
                                                 {/* Actions */}
                                                 <td className="px-8 py-6 text-right text-sm font-medium whitespace-nowrap">
-                                                    <div className="flex items-center justify-end gap-3">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() =>
+                                                                handleQuickCheckout(
+                                                                    product,
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                product.stock ===
+                                                                'out of stock'
+                                                            }
+                                                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-emerald-600 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            <ShoppingCart className="h-3 w-3" />
+                                                            {product.stock ===
+                                                            'out of stock'
+                                                                ? 'Out of Stock'
+                                                                : 'Buy Now'}
+                                                        </button>
                                                         <button
                                                             onClick={() =>
                                                                 handleEditProduct(
                                                                     product,
                                                                 )
                                                             }
-                                                            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-200 hover:scale-105 hover:border-rose-300 hover:from-rose-100 hover:to-pink-100 focus:ring-4 focus:ring-rose-200 focus:outline-none"
+                                                            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-3 py-2 text-xs font-semibold text-rose-700 transition-all duration-200 hover:scale-105 hover:border-rose-300 hover:from-rose-100 hover:to-pink-100 focus:ring-4 focus:ring-rose-200 focus:outline-none"
                                                         >
-                                                            <Edit className="h-4 w-4" />
+                                                            <Edit className="h-3 w-3" />
                                                             Edit
                                                         </button>
                                                         <button
@@ -556,9 +591,9 @@ export default function Products({
                                                                     product,
                                                                 )
                                                             }
-                                                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-rose-600 hover:to-pink-700 focus:ring-4 focus:ring-rose-300 focus:outline-none"
+                                                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-rose-600 hover:to-pink-700 focus:ring-4 focus:ring-rose-300 focus:outline-none"
                                                         >
-                                                            <Trash2 className="h-4 w-4" />
+                                                            <Trash2 className="h-3 w-3" />
                                                             Delete
                                                         </button>
                                                     </div>

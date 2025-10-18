@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ProductsController;
 use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\OrderController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -28,4 +29,13 @@ Route::prefix('categories')->group(function () {
     Route::get('/{id}', [CategoryController::class, 'show'])->name('api.categories.show');
     Route::put('/{id}', [CategoryController::class, 'update'])->name('api.categories.update');
     Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('api.categories.destroy');
+});
+
+// Orders API routes
+Route::prefix('orders')->group(function () {
+    Route::get('/', [OrderController::class, 'index'])->name('api.orders.index');
+    Route::post('/', [OrderController::class, 'store'])->name('api.orders.store');
+    Route::get('/{order}', [OrderController::class, 'show'])->name('api.orders.show');
+    Route::put('/{order}', [OrderController::class, 'update'])->name('api.orders.update');
+    Route::delete('/{order}', [OrderController::class, 'destroy'])->name('api.orders.destroy');
 });

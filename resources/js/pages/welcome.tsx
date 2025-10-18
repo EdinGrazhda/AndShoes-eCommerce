@@ -7,12 +7,15 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { BannerCarousel } from '../components/BannerCarousel';
 import { CartDrawer } from '../components/CartDrawer';
+import { CheckoutModal } from '../components/CheckoutModal';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { Header } from '../components/Header';
+import { OrderSuccessModal } from '../components/OrderSuccessModal';
 import { ProductGrid } from '../components/ProductGrid';
 import { QuickView } from '../components/QuickView';
 import { useDebounce } from '../hooks/useDebounce';
 import { useURLFilters } from '../hooks/useURLFilters';
+import { useCheckoutStore } from '../store/checkoutStore';
 import type {
     Category,
     Filters,
@@ -143,6 +146,15 @@ function StorefrontContent() {
     );
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
+    const {
+        isOpen: isCheckoutOpen,
+        product: checkoutProduct,
+        closeCheckout,
+        isSuccessOpen,
+        successOrder,
+        closeSuccess,
+    } = useCheckoutStore();
+
     // Update filters when debounced search changes
     useMemo(() => {
         if (debouncedSearch !== filters.search) {
@@ -242,6 +254,24 @@ function StorefrontContent() {
                 product={quickViewProduct}
                 onClose={handleCloseQuickView}
             />
+
+            {/* Checkout Modal */}
+            {checkoutProduct && (
+                <CheckoutModal
+                    isOpen={isCheckoutOpen}
+                    onClose={closeCheckout}
+                    product={checkoutProduct}
+                />
+            )}
+
+            {/* Order Success Modal */}
+            {successOrder && (
+                <OrderSuccessModal
+                    isOpen={isSuccessOpen}
+                    onClose={closeSuccess}
+                    order={successOrder}
+                />
+            )}
         </div>
     );
 }
