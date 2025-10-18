@@ -300,17 +300,17 @@ export default function Orders({
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-gray-50">
                 <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
                     {/* Header Section */}
-                    <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-4">
-                                <div className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 p-3 shadow-lg">
-                                    <ShoppingCart className="h-7 w-7 text-white" />
+                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 p-2 shadow-lg">
+                                    <ShoppingCart className="h-5 w-5 text-white" />
                                 </div>
                                 <div>
-                                    <h1 className="text-4xl font-bold tracking-tight text-gray-900 lg:text-5xl">
+                                    <h1 className="text-2xl font-bold tracking-tight text-gray-900 lg:text-3xl">
                                         Orders
                                     </h1>
-                                    <p className="mt-2 text-lg text-gray-600">
+                                    <p className="mt-1 text-sm text-gray-600">
                                         Manage and track customer orders
                                     </p>
                                 </div>
@@ -319,36 +319,36 @@ export default function Orders({
                     </div>
 
                     {/* Smart Filters Section */}
-                    <div className="mb-10 overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl">
-                        <div className="border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white px-8 py-6">
+                    <div className="mb-6 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl">
+                        <div className="border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white px-6 py-4">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 p-3 shadow-lg">
-                                        <Filter className="h-5 w-5 text-white" />
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 p-2 shadow-lg">
+                                        <Filter className="h-4 w-4 text-white" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-gray-900">
+                                    <h3 className="text-base font-bold text-gray-900">
                                         Smart Filters
                                     </h3>
                                 </div>
                                 <button
                                     onClick={clearFilters}
-                                    className="inline-flex items-center gap-2 rounded-xl bg-gray-100 px-6 py-3 text-sm font-semibold text-gray-700 transition-all duration-200 hover:scale-105 hover:bg-gray-200 hover:text-gray-900"
+                                    className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-700 transition-all duration-200 hover:scale-105 hover:bg-gray-200 hover:text-gray-900"
                                 >
-                                    <X className="h-4 w-4" />
+                                    <X className="h-3 w-3" />
                                     Clear All
                                 </button>
                             </div>
                         </div>
 
-                        <div className="p-8">
-                            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                                 {/* Search */}
-                                <div className="space-y-3">
-                                    <label className="text-sm font-semibold tracking-wide text-gray-700">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold tracking-wide text-gray-700">
                                         Search Orders
                                     </label>
                                     <div className="relative">
-                                        <Search className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                                        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                         <input
                                             type="text"
                                             value={searchTerm}
@@ -356,14 +356,14 @@ export default function Orders({
                                                 setSearchTerm(e.target.value)
                                             }
                                             placeholder="Order ID, Customer..."
-                                            className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50/50 py-4 pr-4 pl-12 text-sm font-medium transition-all duration-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100 focus:outline-none"
+                                            className="w-full rounded-xl border-2 border-gray-200 bg-gray-50/50 py-2.5 pr-3 pl-10 text-sm font-medium transition-all duration-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100 focus:outline-none"
                                         />
                                     </div>
                                 </div>
 
                                 {/* Status Filter */}
-                                <div className="space-y-3">
-                                    <label className="text-sm font-semibold tracking-wide text-gray-700">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold tracking-wide text-gray-700">
                                         Order Status
                                     </label>
                                     <select
@@ -371,7 +371,7 @@ export default function Orders({
                                         onChange={(e) =>
                                             setSelectedStatus(e.target.value)
                                         }
-                                        className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50/50 px-4 py-4 text-sm font-medium transition-all duration-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100 focus:outline-none"
+                                        className="w-full rounded-xl border-2 border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm font-medium transition-all duration-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100 focus:outline-none"
                                     >
                                         <option value="">All Statuses</option>
                                         <option value="pending">Pending</option>
@@ -392,8 +392,8 @@ export default function Orders({
                                 </div>
 
                                 {/* Country Filter */}
-                                <div className="space-y-3">
-                                    <label className="text-sm font-semibold tracking-wide text-gray-700">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold tracking-wide text-gray-700">
                                         Country
                                     </label>
                                     <select
@@ -401,7 +401,7 @@ export default function Orders({
                                         onChange={(e) =>
                                             setSelectedCountry(e.target.value)
                                         }
-                                        className="w-full rounded-2xl border-2 border-gray-200 bg-gray-50/50 px-4 py-4 text-sm font-medium transition-all duration-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100 focus:outline-none"
+                                        className="w-full rounded-xl border-2 border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm font-medium transition-all duration-300 focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100 focus:outline-none"
                                     >
                                         <option value="">All Countries</option>
                                         <option value="albania">Albania</option>
@@ -416,20 +416,20 @@ export default function Orders({
                     </div>
 
                     {/* Orders Table Section */}
-                    <div className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl">
-                        <div className="border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white px-8 py-6">
+                    <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl">
+                        <div className="border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white px-6 py-4">
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 p-3 shadow-lg">
-                                        <ShoppingCart className="h-5 w-5 text-white" />
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-lg bg-gradient-to-r from-purple-500 to-violet-600 p-2 shadow-lg">
+                                        <ShoppingCart className="h-4 w-4 text-white" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-gray-900">
+                                    <h3 className="text-base font-bold text-gray-900">
                                         Orders List (
                                         {pagination?.total || orders.length}{' '}
                                         orders)
                                     </h3>
                                 </div>
-                                <div className="text-sm font-medium text-gray-600">
+                                <div className="text-xs font-medium text-gray-600">
                                     Showing {pagination?.from || 0} to{' '}
                                     {pagination?.to || 0} of{' '}
                                     {pagination?.total || orders.length} orders
@@ -438,120 +438,219 @@ export default function Orders({
                         </div>
 
                         {orders.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full divide-y divide-gray-200">
-                                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                                        <tr>
-                                            <th className="px-8 py-6 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
-                                                Order ID
-                                            </th>
-                                            <th className="px-8 py-6 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
-                                                Customer
-                                            </th>
-                                            <th className="px-8 py-6 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
-                                                Product
-                                            </th>
-                                            <th className="px-8 py-6 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
-                                                Total
-                                            </th>
-                                            <th className="px-8 py-6 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
-                                                Status
-                                            </th>
-                                            <th className="px-8 py-6 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
-                                                Date
-                                            </th>
-                                            <th className="px-8 py-6 text-right text-xs font-bold tracking-wider text-gray-700 uppercase">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200 bg-white">
-                                        {orders.map((order, index) => (
-                                            <tr
-                                                key={order.id}
-                                                className={`transition-all duration-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white hover:shadow-lg ${
-                                                    index % 2 === 0
-                                                        ? 'bg-white'
-                                                        : 'bg-gray-50/30'
-                                                }`}
-                                            >
-                                                {/* Order ID */}
-                                                <td className="px-8 py-6 whitespace-nowrap">
+                            <>
+                                {/* Desktop Table View - Hidden on mobile */}
+                                <div className="hidden lg:block">
+                                    <table className="w-full divide-y divide-gray-200">
+                                        <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    Order ID
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    Customer
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    Product
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    Total
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    Status
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    Date
+                                                </th>
+                                                <th className="w-48 px-4 py-3 text-center text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    Actions
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 bg-white">
+                                            {orders.map((order, index) => (
+                                                <tr
+                                                    key={order.id}
+                                                    className={`transition-all duration-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white hover:shadow-lg ${
+                                                        index % 2 === 0
+                                                            ? 'bg-white'
+                                                            : 'bg-gray-50/30'
+                                                    }`}
+                                                >
+                                                    {/* Order ID */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="rounded-lg bg-gradient-to-r from-emerald-100 to-teal-100 p-1.5">
+                                                                <Hash className="h-3 w-3 text-emerald-600" />
+                                                            </div>
+                                                            <span className="text-xs font-bold text-gray-900">
+                                                                {
+                                                                    order.unique_id
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Customer */}
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="rounded-xl bg-gradient-to-r from-blue-100 to-indigo-100 p-1.5">
+                                                                <User className="h-4 w-4 text-blue-600" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-xs font-bold text-gray-900">
+                                                                    {
+                                                                        order.customer_full_name
+                                                                    }
+                                                                </div>
+                                                                <div className="text-xs text-gray-500">
+                                                                    {
+                                                                        order.customer_email
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Product */}
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex items-center gap-2">
+                                                            {order.product_image ? (
+                                                                <img
+                                                                    src={
+                                                                        order.product_image
+                                                                    }
+                                                                    alt={
+                                                                        order.product_name
+                                                                    }
+                                                                    className="h-10 w-10 rounded-lg object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                                                                    <Package className="h-5 w-5 text-gray-400" />
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <div className="text-xs font-semibold text-gray-900">
+                                                                    {
+                                                                        order.product_name
+                                                                    }
+                                                                </div>
+                                                                <div className="text-xs text-gray-500">
+                                                                    Qty:{' '}
+                                                                    {
+                                                                        order.quantity
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Total */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="text-base font-bold text-emerald-600">
+                                                            $
+                                                            {formatPrice(
+                                                                order.total_amount,
+                                                            )}
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Status */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <span
+                                                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${getStatusColor(order.status)}`}
+                                                        >
+                                                            {order.status
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                                order.status.slice(
+                                                                    1,
+                                                                )}
+                                                        </span>
+                                                    </td>
+
+                                                    {/* Date */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                                            <Calendar className="h-3 w-3" />
+                                                            {order.created_at
+                                                                ? formatDate(
+                                                                      order.created_at,
+                                                                  )
+                                                                : 'N/A'}
+                                                        </div>
+                                                    </td>
+
+                                                    {/* Actions */}
+                                                    <td className="w-48 px-4 py-3 pr-8">
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleViewDetails(
+                                                                        order,
+                                                                    )
+                                                                }
+                                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-blue-600 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 focus:outline-none"
+                                                            >
+                                                                <Eye className="h-3 w-3" />
+                                                                View
+                                                            </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleEditOrder(
+                                                                        order,
+                                                                    )
+                                                                }
+                                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-purple-600 hover:to-violet-700 focus:ring-4 focus:ring-purple-300 focus:outline-none"
+                                                            >
+                                                                <Edit2 className="h-3 w-3" />
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() =>
+                                                                    handleDeleteOrder(
+                                                                        order,
+                                                                    )
+                                                                }
+                                                                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-red-600 hover:to-red-700 focus:ring-4 focus:ring-red-300 focus:outline-none"
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Card View - Visible on mobile only */}
+                                <div className="grid grid-cols-1 gap-6 p-6 lg:hidden">
+                                    {orders.map((order) => (
+                                        <div
+                                            key={order.id}
+                                            className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg transition-all duration-300 hover:shadow-2xl"
+                                        >
+                                            {/* Order Header */}
+                                            <div className="border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-teal-50 p-4">
+                                                <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
                                                         <div className="rounded-lg bg-gradient-to-r from-emerald-100 to-teal-100 p-2">
                                                             <Hash className="h-4 w-4 text-emerald-600" />
                                                         </div>
-                                                        <span className="text-sm font-bold text-gray-900">
-                                                            {order.unique_id}
-                                                        </span>
-                                                    </div>
-                                                </td>
-
-                                                {/* Customer */}
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="rounded-xl bg-gradient-to-r from-blue-100 to-indigo-100 p-2">
-                                                            <User className="h-5 w-5 text-blue-600" />
-                                                        </div>
                                                         <div>
-                                                            <div className="text-sm font-bold text-gray-900">
+                                                            <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                                                Order ID
+                                                            </p>
+                                                            <p className="text-sm font-bold text-gray-900">
                                                                 {
-                                                                    order.customer_full_name
+                                                                    order.unique_id
                                                                 }
-                                                            </div>
-                                                            <div className="text-xs text-gray-500">
-                                                                {
-                                                                    order.customer_email
-                                                                }
-                                                            </div>
+                                                            </p>
                                                         </div>
                                                     </div>
-                                                </td>
-
-                                                {/* Product */}
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center gap-3">
-                                                        {order.product_image ? (
-                                                            <img
-                                                                src={
-                                                                    order.product_image
-                                                                }
-                                                                alt={
-                                                                    order.product_name
-                                                                }
-                                                                className="h-12 w-12 rounded-lg object-cover"
-                                                            />
-                                                        ) : (
-                                                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
-                                                                <Package className="h-6 w-6 text-gray-400" />
-                                                            </div>
-                                                        )}
-                                                        <div>
-                                                            <div className="text-sm font-semibold text-gray-900">
-                                                                {
-                                                                    order.product_name
-                                                                }
-                                                            </div>
-                                                            <div className="text-xs text-gray-500">
-                                                                Qty:{' '}
-                                                                {order.quantity}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-
-                                                {/* Total */}
-                                                <td className="px-8 py-6 whitespace-nowrap">
-                                                    <div className="text-lg font-bold text-emerald-600">
-                                                        $
-                                                        {formatPrice(
-                                                            order.total_amount,
-                                                        )}
-                                                    </div>
-                                                </td>
-
-                                                {/* Status */}
-                                                <td className="px-8 py-6 whitespace-nowrap">
                                                     <span
                                                         className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getStatusColor(order.status)}`}
                                                     >
@@ -562,72 +661,163 @@ export default function Orders({
                                                                 1,
                                                             )}
                                                     </span>
-                                                </td>
+                                                </div>
+                                            </div>
 
-                                                {/* Date */}
-                                                <td className="px-8 py-6 whitespace-nowrap">
-                                                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                                                        <Calendar className="h-4 w-4" />
-                                                        {order.created_at
-                                                            ? formatDate(
-                                                                  order.created_at,
-                                                              )
-                                                            : 'Unknown'}
+                                            {/* Order Details */}
+                                            <div className="space-y-4 p-4">
+                                                {/* Customer Info */}
+                                                <div className="flex items-start gap-3">
+                                                    <div className="rounded-xl bg-gradient-to-r from-blue-100 to-indigo-100 p-2">
+                                                        <User className="h-5 w-5 text-blue-600" />
                                                     </div>
-                                                </td>
+                                                    <div className="flex-1">
+                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                                            Customer
+                                                        </p>
+                                                        <p className="text-sm font-bold text-gray-900">
+                                                            {
+                                                                order.customer_full_name
+                                                            }
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">
+                                                            {
+                                                                order.customer_email
+                                                            }
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">
+                                                            {
+                                                                order.customer_phone
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Product Info */}
+                                                <div className="flex items-start gap-3 border-t border-gray-100 pt-4">
+                                                    {order.product_image ? (
+                                                        <img
+                                                            src={
+                                                                order.product_image
+                                                            }
+                                                            alt={
+                                                                order.product_name
+                                                            }
+                                                            className="h-16 w-16 flex-shrink-0 rounded-lg object-cover shadow-md"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                                            <Package className="h-8 w-8 text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1">
+                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                                            Product
+                                                        </p>
+                                                        <p className="text-sm font-bold text-gray-900">
+                                                            {order.product_name}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">
+                                                            Quantity:{' '}
+                                                            {order.quantity}
+                                                        </p>
+                                                        {order.product_size && (
+                                                            <p className="text-xs text-gray-500">
+                                                                Size:{' '}
+                                                                {
+                                                                    order.product_size
+                                                                }
+                                                            </p>
+                                                        )}
+                                                        {order.product_color && (
+                                                            <p className="text-xs text-gray-500">
+                                                                Color:{' '}
+                                                                {
+                                                                    order.product_color
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Total & Date */}
+                                                <div className="flex items-center justify-between border-t border-gray-100 pt-4">
+                                                    <div>
+                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                                            Total Amount
+                                                        </p>
+                                                        <p className="text-2xl font-bold text-emerald-600">
+                                                            $
+                                                            {formatPrice(
+                                                                order.total_amount,
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                                            Order Date
+                                                        </p>
+                                                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                                                            <Calendar className="h-4 w-4" />
+                                                            {order.created_at
+                                                                ? formatDate(
+                                                                      order.created_at,
+                                                                  )
+                                                                : 'Unknown'}
+                                                        </div>
+                                                    </div>
+                                                </div>
 
                                                 {/* Actions */}
-                                                <td className="px-8 py-6 text-right text-sm font-medium whitespace-nowrap">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <button
-                                                            onClick={() =>
-                                                                handleViewDetails(
-                                                                    order,
-                                                                )
-                                                            }
-                                                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-blue-600 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 focus:outline-none"
-                                                        >
-                                                            <Eye className="h-3 w-3" />
-                                                            View
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                handleEditOrder(
-                                                                    order,
-                                                                )
-                                                            }
-                                                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-purple-600 hover:to-violet-700 focus:ring-4 focus:ring-purple-300 focus:outline-none"
-                                                        >
-                                                            <Edit2 className="h-3 w-3" />
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                handleDeleteOrder(
-                                                                    order,
-                                                                )
-                                                            }
-                                                            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-red-600 hover:to-red-700 focus:ring-4 focus:ring-red-300 focus:outline-none"
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-20 text-center">
-                                <div className="mb-6 rounded-full bg-gray-100 p-6">
-                                    <ShoppingCart className="h-12 w-12 text-gray-400" />
+                                                <div className="grid grid-cols-3 gap-2 border-t border-gray-100 pt-4">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleViewDetails(
+                                                                order,
+                                                            )
+                                                        }
+                                                        className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-blue-600 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 focus:outline-none"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                        View
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleEditOrder(
+                                                                order,
+                                                            )
+                                                        }
+                                                        className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-purple-600 hover:to-violet-700 focus:ring-4 focus:ring-purple-300 focus:outline-none"
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDeleteOrder(
+                                                                order,
+                                                            )
+                                                        }
+                                                        className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-red-600 hover:to-red-700 focus:ring-4 focus:ring-red-300 focus:outline-none"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <h3 className="mb-3 text-xl font-bold text-gray-900">
+                            </>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-16 text-center">
+                                <div className="mb-4 rounded-full bg-gray-100 p-5">
+                                    <ShoppingCart className="h-10 w-10 text-gray-400" />
+                                </div>
+                                <h3 className="mb-2 text-lg font-bold text-gray-900">
                                     No orders found
                                 </h3>
-                                <p className="mb-8 max-w-md text-gray-600">
+                                <p className="mb-6 max-w-md text-sm text-gray-600">
                                     {Object.keys(filters).length > 0
                                         ? 'Try adjusting your filters to see more results.'
                                         : 'Orders will appear here once customers start making purchases.'}
@@ -637,9 +827,9 @@ export default function Orders({
 
                         {/* Pagination */}
                         {pagination && pagination.last_page > 1 && (
-                            <div className="border-t border-gray-200 bg-gray-50 px-8 py-6">
+                            <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
                                 <div className="flex items-center justify-between">
-                                    <div className="text-sm font-medium text-gray-700">
+                                    <div className="text-xs font-medium text-gray-700">
                                         Showing {pagination.from || 0} to{' '}
                                         {pagination.to || 0} of{' '}
                                         {pagination.total || 0} results
@@ -656,9 +846,13 @@ export default function Orders({
                                                                 pagination.current_page -
                                                                 1,
                                                         },
+                                                        {
+                                                            preserveState: true,
+                                                            preserveScroll: true,
+                                                        },
                                                     )
                                                 }
-                                                className="relative inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50"
+                                                className="relative inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50"
                                             >
                                                 Previous
                                             </button>
@@ -677,9 +871,13 @@ export default function Orders({
                                                             ...getCurrentFilters(),
                                                             page,
                                                         },
+                                                        {
+                                                            preserveState: true,
+                                                            preserveScroll: true,
+                                                        },
                                                     )
                                                 }
-                                                className={`relative inline-flex items-center rounded-xl border px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                                                className={`relative inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
                                                     page ===
                                                     pagination.current_page
                                                         ? 'scale-105 border-emerald-500 bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
@@ -702,9 +900,13 @@ export default function Orders({
                                                                 pagination.current_page +
                                                                 1,
                                                         },
+                                                        {
+                                                            preserveState: true,
+                                                            preserveScroll: true,
+                                                        },
                                                     )
                                                 }
-                                                className="relative inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50"
+                                                className="relative inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50"
                                             >
                                                 Next
                                             </button>
