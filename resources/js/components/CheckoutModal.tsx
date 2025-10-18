@@ -4,8 +4,10 @@ import {
     CreditCard,
     Mail,
     MapPin,
+    Minus,
     Package,
     Phone,
+    Plus,
     Truck,
     User,
     X,
@@ -37,6 +39,7 @@ export const CheckoutModal = memo(
         const { clearCart } = useCartStore();
         const [currentStep, setCurrentStep] = useState(1);
         const [isLoading, setIsLoading] = useState(false);
+        const [quantity, setQuantity] = useState(1);
 
         const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
             full_name: '',
@@ -104,7 +107,7 @@ export const CheckoutModal = memo(
                             product.foot_numbers?.split(',')[0]?.trim() ||
                             'Standard',
                         product_color: product.color || 'As Shown',
-                        quantity: 1,
+                        quantity: quantity,
                         notes: '',
                     }),
                 });
@@ -133,6 +136,7 @@ export const CheckoutModal = memo(
 
         const handleClose = () => {
             setCurrentStep(1);
+            setQuantity(1);
             setCustomerInfo({
                 full_name: '',
                 email: '',
@@ -612,6 +616,76 @@ export const CheckoutModal = memo(
                                                 </div>
                                             </div>
                                         )}
+
+                                        {/* Quantity Selector */}
+                                        <div className="mt-4 rounded-xl bg-white p-4 shadow-sm">
+                                            <p className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                                Quantity
+                                            </p>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() =>
+                                                        setQuantity(
+                                                            Math.max(
+                                                                1,
+                                                                quantity - 1,
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="flex h-10 w-10 items-center justify-center rounded-lg border-2 transition-colors hover:bg-gray-50"
+                                                    style={{
+                                                        borderColor: '#771f48',
+                                                        color: '#771f48',
+                                                    }}
+                                                    aria-label="Decrease quantity"
+                                                >
+                                                    <Minus className="h-4 w-4" />
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="10"
+                                                    value={quantity}
+                                                    onChange={(e) =>
+                                                        setQuantity(
+                                                            Math.min(
+                                                                10,
+                                                                Math.max(
+                                                                    1,
+                                                                    Number(
+                                                                        e.target
+                                                                            .value,
+                                                                    ),
+                                                                ),
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="w-20 rounded-lg border-2 py-2 text-center text-sm font-bold focus:ring-2 focus:outline-none"
+                                                    style={{
+                                                        borderColor: '#771f48',
+                                                        color: '#771f48',
+                                                    }}
+                                                />
+                                                <button
+                                                    onClick={() =>
+                                                        setQuantity(
+                                                            Math.min(
+                                                                10,
+                                                                quantity + 1,
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="flex h-10 w-10 items-center justify-center rounded-lg border-2 transition-colors hover:bg-gray-50"
+                                                    style={{
+                                                        borderColor: '#771f48',
+                                                        color: '#771f48',
+                                                    }}
+                                                    aria-label="Increase quantity"
+                                                >
+                                                    <Plus className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {/* Additional Info */}
@@ -748,11 +822,19 @@ export const CheckoutModal = memo(
                                         <div className="space-y-1.5 border-t border-gray-200 pt-3">
                                             <div className="flex justify-between text-xs">
                                                 <span className="text-gray-600">
-                                                    Price:
+                                                    Price per item:
                                                 </span>
                                                 <span className="font-semibold">
                                                     €
                                                     {formatPrice(product.price)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-gray-600">
+                                                    Quantity:
+                                                </span>
+                                                <span className="font-semibold">
+                                                    {quantity}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between text-xs">
@@ -772,7 +854,10 @@ export const CheckoutModal = memo(
                                                     style={{ color: '#771f48' }}
                                                 >
                                                     €
-                                                    {formatPrice(product.price)}
+                                                    {formatPrice(
+                                                        product.price *
+                                                            quantity,
+                                                    )}
                                                 </span>
                                             </div>
                                         </div>

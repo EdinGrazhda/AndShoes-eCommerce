@@ -106,19 +106,8 @@ export const useCartStore = create<CartStore>()(
                 set((state) => ({ isOpen: !state.isOpen }));
             },
 
-            get totalItems() {
-                return get().items.reduce(
-                    (sum, item) => sum + item.quantity,
-                    0,
-                );
-            },
-
-            get totalPrice() {
-                return get().items.reduce(
-                    (sum, item) => sum + item.product.price * item.quantity,
-                    0,
-                );
-            },
+            totalItems: 0,
+            totalPrice: 0,
         }),
         {
             name: 'cart-storage',
@@ -126,3 +115,29 @@ export const useCartStore = create<CartStore>()(
         },
     ),
 );
+
+// Subscribe to items changes to update totals
+let previousItems: CartItem[] = [];
+useCartStore.subscribe((state) => {
+    // Only update totals if items actually changed
+    if (state.items !== previousItems) {
+        previousItems = state.items;
+
+        const totalItems = state.items.reduce(
+            (sum, item) => sum + item.quantity,
+            0,
+        );
+        const totalPrice = state.items.reduce(
+            (sum, item) => sum + item.product.price * item.quantity,
+            0,
+        );
+
+        // Only update if totals changed to avoid infinite loops
+        if (
+            state.totalItems !== totalItems ||
+            state.totalPrice !== totalPrice
+        ) {
+            useCartStore.setState({ totalItems, totalPrice });
+        }
+    }
+});

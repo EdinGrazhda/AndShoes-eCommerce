@@ -209,7 +209,7 @@ export const ProductCard = memo(
 
                         <button
                             onClick={handleShowDetails}
-                            className="flex items-center gap-1.5 rounded-lg bg-[#771E49] px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-[#5a1738] focus:outline-none focus:ring-2 focus:ring-[#771E49]"
+                            className="flex items-center gap-1.5 rounded-lg bg-[#771E49] px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-[#5a1738] focus:ring-2 focus:ring-[#771E49] focus:outline-none"
                             aria-label={`View details for ${product.name}`}
                         >
                             <Eye size={16} />
