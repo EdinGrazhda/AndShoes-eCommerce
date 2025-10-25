@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ProductsController;
 use App\Http\Controllers\API\CategoryController;
+use App\Http\Controllers\API\CampaignController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\DashboardController;
 
@@ -35,6 +36,15 @@ Route::prefix('categories')->group(function () {
     Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('api.categories.destroy');
 });
 
+// Campaigns API routes
+Route::prefix('campaigns')->group(function () {
+    Route::get('/', [CampaignController::class, 'index'])->name('api.campaigns.index');
+    Route::post('/', [CampaignController::class, 'store'])->name('api.campaigns.store');
+    Route::get('/{id}', [CampaignController::class, 'show'])->name('api.campaigns.show');
+    Route::put('/{id}', [CampaignController::class, 'update'])->name('api.campaigns.update');
+    Route::delete('/{id}', [CampaignController::class, 'destroy'])->name('api.campaigns.destroy');
+});
+
 // Orders API routes
 Route::prefix('orders')->group(function () {
     Route::get('/', [OrderController::class, 'index'])->name('api.orders.index');
@@ -43,3 +53,4 @@ Route::prefix('orders')->group(function () {
     Route::put('/{order}', [OrderController::class, 'update'])->name('api.orders.update');
     Route::delete('/{order}', [OrderController::class, 'destroy'])->name('api.orders.destroy');
 });
+

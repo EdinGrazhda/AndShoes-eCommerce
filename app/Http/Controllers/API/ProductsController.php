@@ -94,6 +94,24 @@ class ProductsController extends Controller
             $perPage = min($request->get('per_page', 20), 100); // Max 100 items per page
             $products = $query->paginate($perPage);
 
+            // Add campaign prices to products
+            $products->getCollection()->transform(function ($product) {
+                $activeCampaign = \App\Models\Campaign::where('product_id', $product->id)
+                    ->where('is_active', true)
+                    ->where('start_date', '<=', now())
+                    ->where('end_date', '>=', now())
+                    ->first();
+                
+                if ($activeCampaign) {
+                    $product->campaign_price = $activeCampaign->price;
+                    $product->campaign_id = $activeCampaign->id;
+                    $product->campaign_name = $activeCampaign->name;
+                    $product->campaign_end_date = $activeCampaign->end_date;
+                }
+                
+                return $product;
+            });
+
             // Return paginated data in the format expected by frontend
             return response()->json($products, 200);
 

@@ -44,6 +44,11 @@ const mainNavItems: NavItem[] = [
         href: '/admin/orders',
         icon: ShoppingCart,
     },
+    {
+        title: 'Campaigns',
+        href: '/admin/campaigns',
+        icon: Folder,
+    }
 ];
 
 const footerNavItems: NavItem[] = [

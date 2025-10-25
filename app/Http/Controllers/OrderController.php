@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Product;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,11 +20,11 @@ class OrderController extends Controller
         // Apply search filter
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('unique_id', 'like', "%{$search}%")
-                  ->orWhere('customer_full_name', 'like', "%{$search}%")
-                  ->orWhere('customer_email', 'like', "%{$search}%")
-                  ->orWhere('product_name', 'like', "%{$search}%");
+                    ->orWhere('customer_full_name', 'like', "%{$search}%")
+                    ->orWhere('customer_email', 'like', "%{$search}%")
+                    ->orWhere('product_name', 'like', "%{$search}%");
             });
         }
 
@@ -93,7 +93,7 @@ class OrderController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -121,7 +121,7 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Order created successfully',
-            'order' => $order->load('product')
+            'order' => $order->load('product'),
         ], 201);
     }
 
@@ -140,7 +140,7 @@ class OrderController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'message' => 'Validation failed',
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -162,7 +162,7 @@ class OrderController extends Controller
 
         return response()->json([
             'message' => 'Order updated successfully',
-            'order' => $order->load('product')
+            'order' => $order->load('product'),
         ]);
     }
 
@@ -171,7 +171,7 @@ class OrderController extends Controller
         $order->delete();
 
         return response()->json([
-            'message' => 'Order deleted successfully'
+            'message' => 'Order deleted successfully',
         ]);
     }
 
@@ -180,19 +180,19 @@ class OrderController extends Controller
         // Debug: Log the product data
         Log::info('Checkout accessed for product', [
             'product_id' => $product->id,
-            'product_name' => $product->name
+            'product_name' => $product->name,
         ]);
 
         try {
             return Inertia::render('checkout/index', [
-                'product' => $product->load('category')
+                'product' => $product->load('category'),
             ]);
         } catch (\Exception $e) {
             Log::error('Checkout error', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
-            
+
             // For debugging, throw the exception to see the actual error
             throw $e;
         }
@@ -201,21 +201,21 @@ class OrderController extends Controller
     public function success(Request $request)
     {
         $orderId = $request->query('order_id');
-        
-        if (!$orderId) {
+
+        if (! $orderId) {
             // If no order ID provided, redirect to home
             return redirect()->route('home');
         }
 
         $order = Order::where('unique_id', $orderId)->with('product')->first();
-        
-        if (!$order) {
+
+        if (! $order) {
             // If order not found, redirect to home
             return redirect()->route('home');
         }
 
         return Inertia::render('order/success', [
-            'order' => $order
+            'order' => $order,
         ]);
     }
 }
