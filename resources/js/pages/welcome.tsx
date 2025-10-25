@@ -76,7 +76,10 @@ const fetchProducts = async (
                 id: product.id,
                 name: product.name,
                 description: product.description,
-                price: parseFloat(product.price),
+                price: parseFloat(product.campaign_price || product.price), // Use campaign price if available
+                originalPrice: product.campaign_price
+                    ? parseFloat(product.price)
+                    : undefined, // Store original price if on campaign
                 image:
                     product.image ||
                     `https://picsum.photos/seed/${product.id}/400/400`,
@@ -87,6 +90,7 @@ const fetchProducts = async (
                 gender: product.gender || 'unisex', // Added gender field
                 categories: product.category ? [product.category] : [],
                 created_at: product.created_at,
+                hasActiveCampaign: !!product.campaign_price, // Flag to show campaign badge
             })),
             current_page: data.current_page,
             last_page: data.last_page,

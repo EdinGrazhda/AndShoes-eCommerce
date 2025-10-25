@@ -2,7 +2,16 @@ import ProductModal from '@/components/ProductModal';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { Edit, Filter, Package, Plus, Search, Trash2, X } from 'lucide-react';
+import {
+    Edit,
+    Edit2,
+    Filter,
+    Package,
+    Plus,
+    Search,
+    Trash2,
+    X,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -363,32 +372,32 @@ export default function Products({
                         {products.length > 0 ? (
                             <>
                                 {/* Desktop Table View - Hidden on mobile */}
-                                <div className="hidden lg:block">
+                                <div className="hidden overflow-x-auto lg:block">
                                     <table className="w-full divide-y divide-gray-200">
                                         <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                                             <tr>
-                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Product
                                                 </th>
-                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Category
                                                 </th>
-                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Price
                                                 </th>
-                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Stock
                                                 </th>
-                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Color
                                                 </th>
-                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Gender
                                                 </th>
-                                                <th className="px-4 py-3 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Sizes
                                                 </th>
-                                                <th className="px-4 py-3 text-right text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                <th className="w-48 px-4 py-4 text-right text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Actions
                                                 </th>
                                             </tr>
@@ -411,7 +420,15 @@ export default function Products({
                                                                     <img
                                                                         className="h-10 w-10 rounded-lg object-cover"
                                                                         src={
-                                                                            product.image
+                                                                            product.image &&
+                                                                            (product.image.startsWith(
+                                                                                'http',
+                                                                            ) ||
+                                                                                product.image.startsWith(
+                                                                                    '/',
+                                                                                ))
+                                                                                ? product.image
+                                                                                : `https://picsum.photos/seed/${product.id}/80/80`
                                                                         }
                                                                         alt={
                                                                             product.name
@@ -426,7 +443,7 @@ export default function Products({
                                                                         : ''
                                                                 }
                                                             >
-                                                                <div className="text-sm font-medium text-gray-900">
+                                                                <div className="text-xs font-medium text-gray-900">
                                                                     {
                                                                         product.name
                                                                     }
@@ -453,7 +470,7 @@ export default function Products({
                                                                 }
                                                             </span>
                                                         ) : (
-                                                            <span className="text-sm text-gray-400">
+                                                            <span className="text-xs text-gray-400">
                                                                 No category
                                                             </span>
                                                         )}
@@ -461,7 +478,7 @@ export default function Products({
 
                                                     {/* Price */}
                                                     <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-sm font-semibold text-gray-900">
+                                                        <div className="text-xs font-semibold text-gray-900">
                                                             ${product.price}
                                                         </div>
                                                     </td>
@@ -495,7 +512,7 @@ export default function Products({
                                                                                 product.color.toLowerCase(),
                                                                         }}
                                                                     ></div>
-                                                                    <span className="text-sm font-medium text-gray-700 capitalize">
+                                                                    <span className="text-xs font-medium text-gray-700 capitalize">
                                                                         {
                                                                             product.color
                                                                         }
@@ -503,7 +520,7 @@ export default function Products({
                                                                 </>
                                                             )}
                                                             {!product.color && (
-                                                                <span className="text-sm text-gray-400">
+                                                                <span className="text-xs text-gray-400">
                                                                     No color
                                                                 </span>
                                                             )}
@@ -535,14 +552,14 @@ export default function Products({
 
                                                     {/* Sizes */}
                                                     <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-600">
+                                                        <div className="text-xs font-medium text-gray-600">
                                                             {product.foot_numbers ||
                                                                 'N/A'}
                                                         </div>
                                                     </td>
 
                                                     {/* Actions */}
-                                                    <td className="px-4 py-3 pr-6 text-right text-sm font-medium whitespace-nowrap">
+                                                    <td className="w-48 px-4 py-3 pr-6 whitespace-nowrap">
                                                         <div className="flex items-center justify-end gap-2">
                                                             <button
                                                                 onClick={() =>
@@ -575,177 +592,190 @@ export default function Products({
                                 </div>
 
                                 {/* Mobile Card View - Visible on mobile only */}
-                                <div className="grid grid-cols-1 gap-6 p-6 lg:hidden">
+                                <div className="grid gap-6 p-6 lg:hidden">
                                     {products.map((product) => (
                                         <div
                                             key={product.id}
-                                            className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg transition-all duration-300 hover:shadow-2xl"
+                                            className="overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
                                         >
                                             {/* Product Image and Name */}
-                                            <div className="flex items-start gap-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white p-4">
-                                                {product.image && (
-                                                    <img
-                                                        src={product.image}
-                                                        alt={product.name}
-                                                        className="h-20 w-20 flex-shrink-0 rounded-xl object-cover shadow-md"
-                                                    />
-                                                )}
-                                                <div className="flex-1">
-                                                    <h3 className="text-lg font-bold text-gray-900">
-                                                        {product.name}
-                                                    </h3>
-                                                    {product.description && (
-                                                        <p className="mt-1 line-clamp-2 text-sm text-gray-600">
-                                                            {
-                                                                product.description
-                                                            }
-                                                        </p>
-                                                    )}
+                                            <div className="border-b border-gray-200 bg-gradient-to-r from-rose-50 to-pink-50 p-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-start gap-4">
+                                                        {product.image && (
+                                                            <img
+                                                                src={
+                                                                    product.image &&
+                                                                    (product.image.startsWith(
+                                                                        'http',
+                                                                    ) ||
+                                                                        product.image.startsWith(
+                                                                            '/',
+                                                                        ))
+                                                                        ? product.image
+                                                                        : `https://picsum.photos/seed/${product.id}/200/200`
+                                                                }
+                                                                alt={
+                                                                    product.name
+                                                                }
+                                                                className="h-16 w-16 flex-shrink-0 rounded-xl object-cover shadow-md"
+                                                            />
+                                                        )}
+                                                        <div className="flex-1">
+                                                            <h3 className="text-lg font-bold text-gray-900">
+                                                                {product.name}
+                                                            </h3>
+                                                            {product.description && (
+                                                                <p className="mt-1 line-clamp-2 text-sm text-gray-600">
+                                                                    {
+                                                                        product.description
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             {/* Product Details */}
-                                            <div className="space-y-3 p-4">
-                                                {/* Category & Price Row */}
-                                                <div className="flex items-center justify-between">
-                                                    <div>
-                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                            Category
-                                                        </p>
-                                                        {product.category ? (
-                                                            <span className="mt-1 inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-xs font-medium text-rose-800">
-                                                                {
-                                                                    product
-                                                                        .category
-                                                                        .name
-                                                                }
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-sm text-gray-400">
-                                                                No category
-                                                            </span>
-                                                        )}
+                                            <div className="space-y-4 p-4">
+                                                {/* Category */}
+                                                <div>
+                                                    <div className="mb-1.5 text-xs font-semibold text-gray-500">
+                                                        Category
                                                     </div>
-                                                    <div className="text-right">
-                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                            Price
-                                                        </p>
-                                                        <p className="text-2xl font-bold text-gray-900">
-                                                            ${product.price}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                {/* Stock & Color Row */}
-                                                <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                                                    <div>
-                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                            Stock Status
-                                                        </p>
-                                                        <span
-                                                            className={`mt-1 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                                                                product.stock ===
-                                                                'in stock'
-                                                                    ? 'bg-green-100 text-green-800'
-                                                                    : product.stock ===
-                                                                        'low stock'
-                                                                      ? 'bg-yellow-100 text-yellow-800'
-                                                                      : 'bg-red-100 text-red-800'
-                                                            }`}
-                                                        >
-                                                            {product.stock}
+                                                    {product.category ? (
+                                                        <span className="inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-xs font-medium text-rose-800">
+                                                            {
+                                                                product.category
+                                                                    .name
+                                                            }
                                                         </span>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                            Color
-                                                        </p>
-                                                        {product.color ? (
-                                                            <div className="mt-1 flex items-center justify-end gap-2">
-                                                                <div
-                                                                    className="h-6 w-6 rounded-full border-2 border-gray-300 shadow-sm"
-                                                                    style={{
-                                                                        backgroundColor:
-                                                                            product.color.toLowerCase(),
-                                                                    }}
-                                                                ></div>
-                                                                <span className="text-sm font-medium text-gray-700 capitalize">
-                                                                    {
-                                                                        product.color
-                                                                    }
-                                                                </span>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-sm text-gray-400">
-                                                                No color
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-400">
+                                                            No category
+                                                        </span>
+                                                    )}
                                                 </div>
 
-                                                {/* Gender & Sizes Row */}
-                                                <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                                                    <div>
-                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                            Gender
-                                                        </p>
-                                                        <span
-                                                            className={`mt-1 inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                                                                product.gender ===
-                                                                'male'
-                                                                    ? 'bg-blue-100 text-blue-800'
-                                                                    : product.gender ===
-                                                                        'female'
-                                                                      ? 'bg-pink-100 text-pink-800'
-                                                                      : 'bg-gray-100 text-gray-800'
-                                                            }`}
-                                                        >
-                                                            {product.gender ===
+                                                {/* Price */}
+                                                <div>
+                                                    <div className="mb-1.5 text-xs font-semibold text-gray-500">
+                                                        Price
+                                                    </div>
+                                                    <p className="text-2xl font-bold text-gray-900">
+                                                        ${product.price}
+                                                    </p>
+                                                </div>
+
+                                                {/* Stock Status */}
+                                                <div>
+                                                    <div className="mb-1.5 text-xs font-semibold text-gray-500">
+                                                        Stock Status
+                                                    </div>
+                                                    <span
+                                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+                                                            product.stock ===
+                                                            'in stock'
+                                                                ? 'bg-green-100 text-green-800'
+                                                                : product.stock ===
+                                                                    'low stock'
+                                                                  ? 'bg-yellow-100 text-yellow-800'
+                                                                  : 'bg-red-100 text-red-800'
+                                                        }`}
+                                                    >
+                                                        {product.stock}
+                                                    </span>
+                                                </div>
+
+                                                {/* Color */}
+                                                <div>
+                                                    <div className="mb-1.5 text-xs font-semibold text-gray-500">
+                                                        Color
+                                                    </div>
+                                                    {product.color ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <div
+                                                                className="h-6 w-6 rounded-full border-2 border-gray-300 shadow-sm"
+                                                                style={{
+                                                                    backgroundColor:
+                                                                        product.color.toLowerCase(),
+                                                                }}
+                                                            ></div>
+                                                            <span className="text-sm font-medium text-gray-700 capitalize">
+                                                                {product.color}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-400">
+                                                            No color
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Gender */}
+                                                <div>
+                                                    <div className="mb-1.5 text-xs font-semibold text-gray-500">
+                                                        Gender
+                                                    </div>
+                                                    <span
+                                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+                                                            product.gender ===
                                                             'male'
-                                                                ? 'Male'
+                                                                ? 'bg-blue-100 text-blue-800'
                                                                 : product.gender ===
                                                                     'female'
-                                                                  ? 'Female'
-                                                                  : 'Unisex'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                            Sizes
-                                                        </p>
-                                                        <p className="mt-1 text-sm font-medium text-gray-700">
-                                                            {product.foot_numbers ||
-                                                                'N/A'}
-                                                        </p>
-                                                    </div>
+                                                                  ? 'bg-pink-100 text-pink-800'
+                                                                  : 'bg-gray-100 text-gray-800'
+                                                        }`}
+                                                    >
+                                                        {product.gender ===
+                                                        'male'
+                                                            ? 'Male'
+                                                            : product.gender ===
+                                                                'female'
+                                                              ? 'Female'
+                                                              : 'Unisex'}
+                                                    </span>
                                                 </div>
 
-                                                {/* Actions */}
-                                                <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <button
-                                                            onClick={() =>
-                                                                handleEditProduct(
-                                                                    product,
-                                                                )
-                                                            }
-                                                            className="flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-4 py-3 text-sm font-semibold text-rose-700 transition-all duration-200 hover:scale-105 hover:border-rose-300 hover:from-rose-100 hover:to-pink-100 focus:ring-4 focus:ring-rose-200 focus:outline-none"
-                                                        >
-                                                            <Edit className="h-4 w-4" />
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                handleDeleteProduct(
-                                                                    product,
-                                                                )
-                                                            }
-                                                            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-rose-600 hover:to-pink-700 focus:ring-4 focus:ring-rose-300 focus:outline-none"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                            Delete
-                                                        </button>
+                                                {/* Sizes */}
+                                                <div>
+                                                    <div className="mb-1.5 text-xs font-semibold text-gray-500">
+                                                        Sizes
                                                     </div>
+                                                    <p className="text-sm text-gray-600">
+                                                        {product.foot_numbers ||
+                                                            'N/A'}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Card Actions */}
+                                            <div className="border-t border-gray-200 bg-gray-50 p-4">
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleEditProduct(
+                                                                product,
+                                                            )
+                                                        }
+                                                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-rose-600 hover:to-pink-700 focus:ring-4 focus:ring-rose-300 focus:outline-none"
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDeleteProduct(
+                                                                product,
+                                                            )
+                                                        }
+                                                        className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-4 py-3 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-red-600 hover:to-red-700 focus:ring-4 focus:ring-red-300 focus:outline-none"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        Delete
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>

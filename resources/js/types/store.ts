@@ -3,6 +3,7 @@ export interface Product {
     name: string;
     description: string;
     price: number;
+    originalPrice?: number; // Original price if product is on campaign
     image: string;
     rating: number;
     stock: string; // Changed from number to string - can be 'in stock', 'low stock', 'out of stock'
@@ -12,6 +13,10 @@ export interface Product {
     gender?: 'male' | 'female' | 'unisex';
     categories: Category[];
     created_at: string;
+    hasActiveCampaign?: boolean; // Flag to indicate if product has an active campaign
+    campaign_id?: number; // Campaign ID if product is on campaign
+    campaign_name?: string; // Campaign name if product is on campaign
+    campaign_end_date?: string; // Campaign end date for countdown timer
 }
 
 export interface Category {

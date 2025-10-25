@@ -3,20 +3,34 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Campaign extends Model
 {
-    
-    protected $fillable = ['name', 'description', 'start_date', 'end_date', 'is_active'];
-
-    protected $casts = [
-        'is_active' => 'boolean',
-        'start_date' => 'datetime',
-        'end_date' => 'datetime',
+    protected $fillable = [
+        'name',
+        'description',
+        'price',
+        'start_date',
+        'end_date',
+        'product_id',
+        'banner_image',
+        'banner_color',
+        'is_active',
     ];
 
-    public function products()
+    protected $casts = [
+        'start_date' => 'date',
+        'end_date' => 'date',
+        'is_active' => 'boolean',
+    ];
+
+    /**
+     * Get the product that belongs to the campaign
+     */
+    public function product()
     {
-        return $this->belongsToMany(Product::class, 'campaign_product');
+        return $this->belongsTo(Product::class);
     }
 }
+

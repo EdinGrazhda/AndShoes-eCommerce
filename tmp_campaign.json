@@ -1,0 +1,11 @@
+{
+    "name": "cli-test-campaign",
+    "description": "created-from-cli",
+    "price": 5,
+    "start_date": "2025-10-25",
+    "end_date": "2025-10-26",
+    "product_id": 10,
+    "banner_image": null,
+    "banner_color": "#ef4444",
+    "is_active": true
+}

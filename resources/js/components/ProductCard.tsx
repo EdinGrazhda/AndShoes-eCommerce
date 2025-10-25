@@ -1,5 +1,5 @@
-import { Eye, Star } from 'lucide-react';
-import { memo, useCallback, useState } from 'react';
+import { Clock, Eye, Star, Tag } from 'lucide-react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import type { Product } from '../types/store';
 
 interface ProductCardProps {
@@ -14,6 +14,47 @@ interface ProductCardProps {
 export const ProductCard = memo(
     ({ product, onQuickView }: ProductCardProps) => {
         const [imageLoaded, setImageLoaded] = useState(false);
+        const [timeRemaining, setTimeRemaining] = useState<{
+            days: number;
+            hours: number;
+            minutes: number;
+            seconds: number;
+        } | null>(null);
+
+        // Calculate countdown timer for campaign
+        useEffect(() => {
+            if (!product.campaign_end_date) {
+                setTimeRemaining(null);
+                return;
+            }
+
+            const calculateTimeRemaining = () => {
+                const now = new Date().getTime();
+                const end = new Date(product.campaign_end_date!).getTime();
+                const distance = end - now;
+
+                if (distance < 0) {
+                    setTimeRemaining(null);
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor(
+                    (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+                );
+                const minutes = Math.floor(
+                    (distance % (1000 * 60 * 60)) / (1000 * 60),
+                );
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                setTimeRemaining({ days, hours, minutes, seconds });
+            };
+
+            calculateTimeRemaining();
+            const interval = setInterval(calculateTimeRemaining, 1000);
+
+            return () => clearInterval(interval);
+        }, [product.campaign_end_date]);
 
         const handleShowDetails = useCallback(
             (e: React.MouseEvent) => {
@@ -93,6 +134,21 @@ export const ProductCard = memo(
                     {isLowStock && (
                         <div className="absolute top-2 right-2 rounded bg-[#771E49] px-2 py-1 text-xs font-semibold text-white">
                             Only {product.stock} left
+                        </div>
+                    )}
+
+                    {/* Campaign Badge */}
+                    {product.hasActiveCampaign && product.originalPrice && (
+                        <div className="absolute top-2 left-2 flex items-center gap-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 text-xs font-bold text-white shadow-lg">
+                            <Tag size={12} />
+                            <span>
+                                {Math.round(
+                                    ((product.originalPrice - product.price) /
+                                        product.originalPrice) *
+                                        100,
+                                )}
+                                % OFF
+                            </span>
                         </div>
                     )}
                 </div>
@@ -203,9 +259,43 @@ export const ProductCard = memo(
 
                     {/* Price and Action */}
                     <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xl font-bold text-[#771E49]">
-                            €{product.price.toFixed(2)}
-                        </span>
+                        <div className="flex flex-col">
+                            {product.hasActiveCampaign &&
+                            product.originalPrice ? (
+                                <>
+                                    <span className="text-xl font-bold text-green-600">
+                                        €{product.price.toFixed(2)}
+                                    </span>
+                                    <span className="text-sm text-gray-400 line-through">
+                                        €{product.originalPrice.toFixed(2)}
+                                    </span>
+                                    {product.campaign_name && (
+                                        <span className="text-xs font-semibold text-purple-600">
+                                            {product.campaign_name}
+                                        </span>
+                                    )}
+                                    {timeRemaining && (
+                                        <div className="mt-1 flex items-center gap-1 text-xs font-medium text-gray-600">
+                                            <Clock
+                                                size={12}
+                                                className="text-purple-600"
+                                            />
+                                            <span>
+                                                {timeRemaining.days > 0 &&
+                                                    `${timeRemaining.days}d `}
+                                                {timeRemaining.hours}h{' '}
+                                                {timeRemaining.minutes}m{' '}
+                                                {timeRemaining.seconds}s
+                                            </span>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <span className="text-xl font-bold text-[#771E49]">
+                                    €{product.price.toFixed(2)}
+                                </span>
+                            )}
+                        </div>
 
                         <button
                             onClick={handleShowDetails}
