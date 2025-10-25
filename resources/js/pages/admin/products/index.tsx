@@ -377,6 +377,9 @@ export default function Products({
                                         <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                                             <tr>
                                                 <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    ID
+                                                </th>
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Product
                                                 </th>
                                                 <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
@@ -412,6 +415,13 @@ export default function Products({
                                                             : 'bg-gray-50/30'
                                                     }`}
                                                 >
+                                                    {/* Product ID */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="text-xs font-semibold text-gray-500">
+                                                            #{product.id}
+                                                        </div>
+                                                    </td>
+
                                                     {/* Product Info */}
                                                     <td className="px-4 py-3 whitespace-nowrap">
                                                         <div className="flex items-center">
@@ -622,6 +632,10 @@ export default function Products({
                                                             />
                                                         )}
                                                         <div className="flex-1">
+                                                            <div className="mb-1 text-xs font-semibold text-gray-500">
+                                                                ID: #
+                                                                {product.id}
+                                                            </div>
                                                             <h3 className="text-lg font-bold text-gray-900">
                                                                 {product.name}
                                                             </h3>

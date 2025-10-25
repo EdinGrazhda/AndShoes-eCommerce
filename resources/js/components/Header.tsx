@@ -34,9 +34,11 @@ export const Header = memo(
 
                         {/* Logo */}
                         <div className="flex-shrink-0">
-                            <h1 className="text-xl font-bold text-[#771E49] sm:text-2xl">
-                                AndShoes
-                            </h1>
+                            <img
+                                src="/images/andshoeslogo1.png"
+                                alt="AndShoes"
+                                className="h-10 w-auto sm:h-12"
+                            />
                         </div>
 
                         {/* Search Bar */}
