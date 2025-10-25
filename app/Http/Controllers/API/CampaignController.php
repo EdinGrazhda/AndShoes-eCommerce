@@ -94,8 +94,7 @@ class CampaignController extends Controller
             // Verify product exists and get its price for validation
             $product = Product::findOrFail($request->product_id);
             Log::info('Product found:', ['id' => $product->id, 'price' => $product->price]);
-            
-            // Validate that campaign price is less than product price
+          
             if ($request->price >= $product->price) {
                 Log::warning('Campaign price validation failed');
                 return response()->json([

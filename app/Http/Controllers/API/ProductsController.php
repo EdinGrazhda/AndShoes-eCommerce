@@ -109,6 +109,9 @@ class ProductsController extends Controller
                     $product->campaign_end_date = $activeCampaign->end_date;
                 }
                 
+                // Add media library image URL
+                $product->image_url = $product->image_url; // Uses accessor from model
+                
                 return $product;
             });
 
@@ -139,7 +142,7 @@ class ProductsController extends Controller
                 'name' => 'required|string|max:255|unique:products',
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0|max:999999.99',
-                'image' => 'nullable|string|max:500',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // Now accepts file upload
                 'stock' => 'required|string|in:in stock,out of stock,low stock',
                 'foot_numbers' => 'nullable|string|max:255',
                 'color' => 'nullable|string|max:255',
@@ -159,13 +162,19 @@ class ProductsController extends Controller
                 'name' => $request->name,
                 'description' => $request->description,
                 'price' => $request->price,
-                'image' => $request->image,
+                'image' => null, // Will be set by media library
                 'stock' => $request->stock,
                 'foot_numbers' => $request->foot_numbers,
                 'color' => $request->color,
                 'category_id' => $request->category_id,
                 'gender' => $request->gender
             ]);
+
+            // Handle image upload with Media Library
+            if ($request->hasFile('image')) {
+                $product->addMediaFromRequest('image')
+                    ->toMediaCollection('images');
+            }
 
             $product->load('category');
 
@@ -243,7 +252,7 @@ class ProductsController extends Controller
                 'name' => 'sometimes|required|string|max:255|unique:products,name,' . $id,
                 'description' => 'sometimes|nullable|string',
                 'price' => 'sometimes|required|numeric|min:0|max:999999.99',
-                'image' => 'sometimes|nullable|string|max:500',
+                'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // Now accepts file upload
                 'stock' => 'sometimes|required|string|in:in stock,out of stock,low stock',
                 'foot_numbers' => 'sometimes|nullable|string|max:255',
                 'color' => 'sometimes|nullable|string|max:255',
@@ -259,7 +268,16 @@ class ProductsController extends Controller
                 ], 422);
             }
 
-            $product->update($request->only(['name', 'description', 'price', 'image', 'stock', 'foot_numbers', 'color', 'category_id', 'gender']));
+            $product->update($request->only(['name', 'description', 'price', 'stock', 'foot_numbers', 'color', 'category_id', 'gender']));
+
+            // Handle image upload with Media Library
+            if ($request->hasFile('image')) {
+                // Clear old images
+                $product->clearMediaCollection('images');
+                // Add new image
+                $product->addMediaFromRequest('image')
+                    ->toMediaCollection('images');
+            }
 
             $product->load('category');
 

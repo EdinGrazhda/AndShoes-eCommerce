@@ -39,6 +39,7 @@ Route::prefix('categories')->group(function () {
 // Campaigns API routes
 Route::prefix('campaigns')->group(function () {
     Route::get('/', [CampaignController::class, 'index'])->name('api.campaigns.index');
+    Route::get('/active', [CampaignController::class, 'active'])->name('api.campaigns.active');
     Route::post('/', [CampaignController::class, 'store'])->name('api.campaigns.store');
     Route::get('/{id}', [CampaignController::class, 'show'])->name('api.campaigns.show');
     Route::put('/{id}', [CampaignController::class, 'update'])->name('api.campaigns.update');

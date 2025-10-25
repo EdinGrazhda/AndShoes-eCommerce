@@ -23,6 +23,21 @@ import type {
     Product,
 } from '../types/store';
 
+// Fetch active campaigns
+const fetchActiveCampaigns = async (): Promise<any[]> => {
+    try {
+        const response = await fetch('/api/campaigns/active');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data.data || [];
+    } catch (error) {
+        console.error('Error fetching campaigns:', error);
+        return [];
+    }
+};
+
 // Real API functions to fetch data from your Laravel backend
 const fetchProducts = async (
     page: number,
@@ -81,8 +96,9 @@ const fetchProducts = async (
                     ? parseFloat(product.price)
                     : undefined, // Store original price if on campaign
                 image:
+                    product.image_url ||
                     product.image ||
-                    `https://picsum.photos/seed/${product.id}/400/400`,
+                    `https://picsum.photos/seed/${product.id}/400/400`, // Use image_url from Media Library
                 rating: Math.floor(Math.random() * 20 + 30) / 10, // Random rating since it's not in your schema
                 stock: product.stock || 0,
                 foot_numbers: product.foot_numbers, // Added missing foot_numbers field
@@ -174,6 +190,14 @@ function StorefrontContent() {
         gcTime: Infinity,
     });
 
+    // Fetch active campaigns
+    const { data: campaigns = [] } = useQuery({
+        queryKey: ['campaigns'],
+        queryFn: fetchActiveCampaigns,
+        staleTime: 60000, // 1 minute
+        gcTime: 300000, // 5 minutes
+    });
+
     // Fetch products with infinite scroll
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
         useInfiniteQuery({
@@ -189,8 +213,44 @@ function StorefrontContent() {
         });
 
     const products = useMemo(() => {
-        return data?.pages.flatMap((page) => page.data) ?? [];
-    }, [data]);
+        const regularProducts = data?.pages.flatMap((page) => page.data) ?? [];
+
+        // Convert campaign products to Product type and add to the beginning
+        const campaignProducts: Product[] = campaigns.flatMap(
+            (campaign: any) =>
+                campaign.products?.map((product: any) => ({
+                    id: product.id,
+                    name: product.name,
+                    description: product.description,
+                    price: parseFloat(product.pivot.campaign_price),
+                    originalPrice: parseFloat(product.price),
+                    image:
+                        product.image_url ||
+                        product.image ||
+                        `https://picsum.photos/seed/${product.id}/400/400`, // Use image_url from Media Library
+                    rating: Math.floor(Math.random() * 20 + 30) / 10,
+                    stock: product.stock || 0,
+                    foot_numbers: product.foot_numbers,
+                    color: product.color,
+                    gender: product.gender || 'unisex',
+                    categories: product.category ? [product.category] : [],
+                    created_at: product.created_at,
+                    hasActiveCampaign: true,
+                    campaign_id: campaign.id,
+                    campaign_name: campaign.name,
+                    campaign_end_date: campaign.end_date,
+                })) || [],
+        );
+
+        // Remove duplicates (if a campaign product is also in regular products)
+        const campaignProductIds = new Set(campaignProducts.map((p) => p.id));
+        const filteredRegularProducts = regularProducts.filter(
+            (p) => !campaignProductIds.has(p.id),
+        );
+
+        // Return campaign products first, then regular products
+        return [...campaignProducts, ...filteredRegularProducts];
+    }, [data, campaigns]);
 
     const handleSearchChange = useCallback((value: string) => {
         setSearchInput(value);

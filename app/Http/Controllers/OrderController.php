@@ -84,6 +84,7 @@ class OrderController extends Controller
             'customer_city' => 'required|string|max:100',
             'customer_country' => 'required|in:albania,kosovo,macedonia',
             'product_id' => 'required|exists:products,id',
+            'product_price' => 'required|numeric|min:0', // Accept price from frontend
             'product_size' => 'nullable|string|max:50',
             'product_color' => 'nullable|string|max:50',
             'quantity' => 'required|integer|min:1|max:100',
@@ -98,7 +99,10 @@ class OrderController extends Controller
         }
 
         $product = Product::findOrFail($request->product_id);
-        $totalAmount = $product->price * $request->quantity;
+        
+        // Use the price sent from frontend (which could be campaign price or regular price)
+        $productPrice = $request->product_price;
+        $totalAmount = $productPrice * $request->quantity;
 
         $order = Order::create([
             'customer_full_name' => $request->customer_full_name,
@@ -109,7 +113,7 @@ class OrderController extends Controller
             'customer_country' => $request->customer_country,
             'product_id' => $request->product_id,
             'product_name' => $product->name,
-            'product_price' => $product->price,
+            'product_price' => $productPrice, // Use the sent price (campaign or regular)
             'product_image' => $product->image,
             'product_size' => $request->product_size,
             'product_color' => $request->product_color,

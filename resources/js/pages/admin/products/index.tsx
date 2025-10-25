@@ -34,6 +34,7 @@ interface Product {
     price: number;
     description?: string;
     image?: string;
+    image_url?: string; // Add Media Library URL
     stock: 'in stock' | 'out of stock' | 'low stock';
     foot_numbers?: string;
     color?: string;
@@ -425,20 +426,15 @@ export default function Products({
                                                     {/* Product Info */}
                                                     <td className="px-4 py-3 whitespace-nowrap">
                                                         <div className="flex items-center">
-                                                            {product.image && (
+                                                            {(product.image_url ||
+                                                                product.image) && (
                                                                 <div className="h-10 w-10 flex-shrink-0">
                                                                     <img
                                                                         className="h-10 w-10 rounded-lg object-cover"
                                                                         src={
-                                                                            product.image &&
-                                                                            (product.image.startsWith(
-                                                                                'http',
-                                                                            ) ||
-                                                                                product.image.startsWith(
-                                                                                    '/',
-                                                                                ))
-                                                                                ? product.image
-                                                                                : `https://picsum.photos/seed/${product.id}/80/80`
+                                                                            product.image_url ||
+                                                                            product.image ||
+                                                                            `https://picsum.photos/seed/${product.id}/80/80`
                                                                         }
                                                                         alt={
                                                                             product.name
@@ -448,6 +444,7 @@ export default function Products({
                                                             )}
                                                             <div
                                                                 className={
+                                                                    product.image_url ||
                                                                     product.image
                                                                         ? 'ml-3'
                                                                         : ''
@@ -612,18 +609,13 @@ export default function Products({
                                             <div className="border-b border-gray-200 bg-gradient-to-r from-rose-50 to-pink-50 p-4">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-start gap-4">
-                                                        {product.image && (
+                                                        {(product.image_url ||
+                                                            product.image) && (
                                                             <img
                                                                 src={
-                                                                    product.image &&
-                                                                    (product.image.startsWith(
-                                                                        'http',
-                                                                    ) ||
-                                                                        product.image.startsWith(
-                                                                            '/',
-                                                                        ))
-                                                                        ? product.image
-                                                                        : `https://picsum.photos/seed/${product.id}/200/200`
+                                                                    product.image_url ||
+                                                                    product.image ||
+                                                                    `https://picsum.photos/seed/${product.id}/200/200`
                                                                 }
                                                                 alt={
                                                                     product.name
