@@ -8,7 +8,8 @@ export interface Product {
     rating: number;
     stock: string; // Changed from number to string - can be 'in stock', 'low stock', 'out of stock'
     foot_numbers?: string; // Available sizes as comma-separated string
-    sizeStocks?: Record<string, number>; // Size-specific stock quantities
+    sizeStocks?: Record<string, { quantity: number; stock_status?: string }>; // Size-specific stock with quantity and status
+    selectedSize?: string; // Selected size when adding to cart
     color?: string;
     gender?: 'male' | 'female' | 'unisex';
     categories: Category[];
@@ -26,7 +27,7 @@ export interface Category {
 }
 
 export interface CartItem {
-    product: Product & { selectedSize?: string };
+    product: Product;
     quantity: number;
 }
 

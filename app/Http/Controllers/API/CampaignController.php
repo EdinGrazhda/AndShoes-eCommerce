@@ -94,8 +94,7 @@ class CampaignController extends Controller
             // Verify product exists and get its price for validation
             $product = Product::findOrFail($request->product_id);
             Log::info('Product found:', ['id' => $product->id, 'price' => $product->price]);
-            
-            // Validate that campaign price is less than product price
+          
             if ($request->price >= $product->price) {
                 Log::warning('Campaign price validation failed');
                 return response()->json([
@@ -248,6 +247,48 @@ class CampaignController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Error deleting campaign',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get all active campaigns with their products
+     */
+    public function active()
+    {
+        try {
+            $campaigns = Campaign::with(['product' => function ($query) {
+                $query->with(['category', 'sizeStocks']);
+            }])
+                ->where('is_active', true)
+                ->where('start_date', '<=', now())
+                ->where('end_date', '>=', now())
+                ->orderBy('start_date', 'desc')
+                ->get()
+                ->map(function ($campaign) {
+                    // Format the response to include products as an array
+                    $campaignData = $campaign->toArray();
+                    // If there's a product, wrap it in an array for frontend compatibility
+                    if ($campaign->product) {
+                        $campaignData['products'] = [$campaign->product->toArray()];
+                    } else {
+                        $campaignData['products'] = [];
+                    }
+                    unset($campaignData['product']); // Remove single product
+                    return $campaignData;
+                });
+
+            return response()->json([
+                'data' => $campaigns,
+                'message' => 'Active campaigns retrieved successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching active campaigns: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            return response()->json([
+                'data' => [],
+                'message' => 'Error fetching active campaigns',
                 'error' => $e->getMessage(),
             ], 500);
         }

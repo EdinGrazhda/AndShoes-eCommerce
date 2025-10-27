@@ -18,7 +18,7 @@ import toast from 'react-hot-toast';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Products',
-        href: '/products',
+        href: '/admin/products',
     },
 ];
 
@@ -34,7 +34,10 @@ interface Product {
     price: number;
     description?: string;
     image?: string;
-    stock: 'in stock' | 'out of stock' | 'low stock';
+    image_url?: string; // Add Media Library URL
+    stock: number; // Now represents quantity
+    stock_quantity?: number; // Backend field
+    stock_status?: string; // Calculated status from backend
     foot_numbers?: string;
     color?: string;
     gender?: 'male' | 'female' | 'unisex';
@@ -377,6 +380,9 @@ export default function Products({
                                         <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                                             <tr>
                                                 <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    ID
+                                                </th>
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Product
                                                 </th>
                                                 <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
@@ -412,23 +418,25 @@ export default function Products({
                                                             : 'bg-gray-50/30'
                                                     }`}
                                                 >
+                                                    {/* Product ID */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        <div className="text-xs font-semibold text-gray-500">
+                                                            #{product.id}
+                                                        </div>
+                                                    </td>
+
                                                     {/* Product Info */}
                                                     <td className="px-4 py-3 whitespace-nowrap">
                                                         <div className="flex items-center">
-                                                            {product.image && (
+                                                            {(product.image_url ||
+                                                                product.image) && (
                                                                 <div className="h-10 w-10 flex-shrink-0">
                                                                     <img
                                                                         className="h-10 w-10 rounded-lg object-cover"
                                                                         src={
-                                                                            product.image &&
-                                                                            (product.image.startsWith(
-                                                                                'http',
-                                                                            ) ||
-                                                                                product.image.startsWith(
-                                                                                    '/',
-                                                                                ))
-                                                                                ? product.image
-                                                                                : `https://picsum.photos/seed/${product.id}/80/80`
+                                                                            product.image_url ||
+                                                                            product.image ||
+                                                                            `https://picsum.photos/seed/${product.id}/80/80`
                                                                         }
                                                                         alt={
                                                                             product.name
@@ -438,6 +446,7 @@ export default function Products({
                                                             )}
                                                             <div
                                                                 className={
+                                                                    product.image_url ||
                                                                     product.image
                                                                         ? 'ml-3'
                                                                         : ''
@@ -485,19 +494,28 @@ export default function Products({
 
                                                     {/* Stock */}
                                                     <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span
-                                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                                                product.stock ===
-                                                                'in stock'
-                                                                    ? 'bg-green-100 text-green-800'
-                                                                    : product.stock ===
-                                                                        'low stock'
-                                                                      ? 'bg-yellow-100 text-yellow-800'
-                                                                      : 'bg-red-100 text-red-800'
-                                                            }`}
-                                                        >
-                                                            {product.stock}
-                                                        </span>
+                                                        <div className="flex flex-col gap-1">
+                                                            <span
+                                                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                                                    product.stock_status ===
+                                                                    'in stock'
+                                                                        ? 'bg-green-100 text-green-800'
+                                                                        : product.stock_status ===
+                                                                            'low stock'
+                                                                          ? 'bg-yellow-100 text-yellow-800'
+                                                                          : 'bg-red-100 text-red-800'
+                                                                }`}
+                                                            >
+                                                                {
+                                                                    product.stock_status
+                                                                }
+                                                            </span>
+                                                            <span className="text-xs text-gray-500">
+                                                                Qty:{' '}
+                                                                {product.stock_quantity ??
+                                                                    product.stock}
+                                                            </span>
+                                                        </div>
                                                     </td>
 
                                                     {/* Color */}
@@ -602,18 +620,13 @@ export default function Products({
                                             <div className="border-b border-gray-200 bg-gradient-to-r from-rose-50 to-pink-50 p-4">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-start gap-4">
-                                                        {product.image && (
+                                                        {(product.image_url ||
+                                                            product.image) && (
                                                             <img
                                                                 src={
-                                                                    product.image &&
-                                                                    (product.image.startsWith(
-                                                                        'http',
-                                                                    ) ||
-                                                                        product.image.startsWith(
-                                                                            '/',
-                                                                        ))
-                                                                        ? product.image
-                                                                        : `https://picsum.photos/seed/${product.id}/200/200`
+                                                                    product.image_url ||
+                                                                    product.image ||
+                                                                    `https://picsum.photos/seed/${product.id}/200/200`
                                                                 }
                                                                 alt={
                                                                     product.name
@@ -622,6 +635,10 @@ export default function Products({
                                                             />
                                                         )}
                                                         <div className="flex-1">
+                                                            <div className="mb-1 text-xs font-semibold text-gray-500">
+                                                                ID: #
+                                                                {product.id}
+                                                            </div>
                                                             <h3 className="text-lg font-bold text-gray-900">
                                                                 {product.name}
                                                             </h3>
@@ -673,19 +690,28 @@ export default function Products({
                                                     <div className="mb-1.5 text-xs font-semibold text-gray-500">
                                                         Stock Status
                                                     </div>
-                                                    <span
-                                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                                                            product.stock ===
-                                                            'in stock'
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : product.stock ===
-                                                                    'low stock'
-                                                                  ? 'bg-yellow-100 text-yellow-800'
-                                                                  : 'bg-red-100 text-red-800'
-                                                        }`}
-                                                    >
-                                                        {product.stock}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span
+                                                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+                                                                product.stock_status ===
+                                                                'in stock'
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : product.stock_status ===
+                                                                        'low stock'
+                                                                      ? 'bg-yellow-100 text-yellow-800'
+                                                                      : 'bg-red-100 text-red-800'
+                                                            }`}
+                                                        >
+                                                            {
+                                                                product.stock_status
+                                                            }
+                                                        </span>
+                                                        <span className="text-xs text-gray-600">
+                                                            Quantity:{' '}
+                                                            {product.stock_quantity ??
+                                                                product.stock}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
                                                 {/* Color */}

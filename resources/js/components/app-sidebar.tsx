@@ -31,7 +31,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Products',
-        href: '/products',
+        href: '/admin/products',
         icon: Package,
     },
     {
@@ -48,7 +48,7 @@ const mainNavItems: NavItem[] = [
         title: 'Campaigns',
         href: '/admin/campaigns',
         icon: Folder,
-    }
+    },
 ];
 
 const footerNavItems: NavItem[] = [

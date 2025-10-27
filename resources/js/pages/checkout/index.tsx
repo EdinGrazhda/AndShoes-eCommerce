@@ -36,6 +36,12 @@ interface Product {
     category_id?: number;
     created_at?: string;
     updated_at?: string;
+    sizeStocks?: {
+        [size: string]: {
+            quantity: number;
+            stock_status: string;
+        };
+    };
 }
 
 interface CheckoutPageProps {
@@ -60,6 +66,7 @@ export default function Checkout({ product }: CheckoutPageProps) {
     const [showModal, setShowModal] = useState(false);
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedSize, setSelectedSize] = useState<string>('');
 
     const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
         full_name: '',
@@ -70,9 +77,14 @@ export default function Checkout({ product }: CheckoutPageProps) {
         country: '',
     });
 
-    const availableSizes = product.foot_numbers
-        ? product.foot_numbers.split(',').map((size) => size.trim())
-        : ['38', '39', '40', '41', '42', '43', '44', '45'];
+    // Determine available sizes based on sizeStocks or foot_numbers
+    const availableSizes = product.sizeStocks
+        ? Object.keys(product.sizeStocks).sort(
+              (a, b) => parseFloat(a) - parseFloat(b),
+          )
+        : product.foot_numbers
+          ? product.foot_numbers.split(',').map((size) => size.trim())
+          : ['38', '39', '40', '41', '42', '43', '44', '45'];
 
     const handleNextStep = () => {
         if (currentStep === 1) {
@@ -88,7 +100,10 @@ export default function Checkout({ product }: CheckoutPageProps) {
                 return;
             }
         }
-        // Step 2 is now informational only, no validation needed
+        if (currentStep === 2 && product.sizeStocks && !selectedSize) {
+            toast.error('Please select a size');
+            return;
+        }
         setCurrentStep(currentStep + 1);
     };
 
@@ -118,7 +133,9 @@ export default function Checkout({ product }: CheckoutPageProps) {
                     customer_city: customerInfo.city,
                     customer_country: customerInfo.country,
                     product_id: product.id,
+                    product_price: product.price,
                     product_size:
+                        selectedSize ||
                         product.foot_numbers?.split(',')[0]?.trim() ||
                         'Standard',
                     product_color: product.color || 'As Shown',
@@ -711,28 +728,95 @@ export default function Checkout({ product }: CheckoutPageProps) {
                                             </div>
                                         </div>
 
-                                        {product.foot_numbers && (
+                                        {(product.foot_numbers ||
+                                            product.sizeStocks) && (
                                             <div className="mt-4 rounded-xl bg-white p-4 shadow-sm">
                                                 <p className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                    Available Sizes
+                                                    {product.sizeStocks
+                                                        ? 'Select Size'
+                                                        : 'Available Sizes'}
                                                 </p>
                                                 <div className="flex flex-wrap gap-2">
                                                     {availableSizes.map(
-                                                        (size) => (
-                                                            <span
-                                                                key={size}
-                                                                className="inline-flex items-center justify-center rounded-lg border-2 px-3 py-1.5 text-sm font-bold text-gray-700"
-                                                                style={{
-                                                                    borderColor:
-                                                                        '#771f48',
-                                                                    color: '#771f48',
-                                                                }}
-                                                            >
-                                                                {size}
-                                                            </span>
-                                                        ),
+                                                        (size) => {
+                                                            const sizeStock =
+                                                                product
+                                                                    .sizeStocks?.[
+                                                                    size
+                                                                ];
+                                                            const isAvailable =
+                                                                sizeStock
+                                                                    ? sizeStock.quantity >
+                                                                      0
+                                                                    : true;
+                                                            const isSelected =
+                                                                selectedSize ===
+                                                                size;
+                                                            const stockQty =
+                                                                sizeStock?.quantity;
+
+                                                            return (
+                                                                <button
+                                                                    key={size}
+                                                                    onClick={() =>
+                                                                        product.sizeStocks &&
+                                                                        isAvailable &&
+                                                                        setSelectedSize(
+                                                                            size,
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        product.sizeStocks &&
+                                                                        !isAvailable
+                                                                    }
+                                                                    className={`inline-flex items-center justify-center rounded-lg border-2 px-3 py-1.5 text-sm font-bold transition-all ${
+                                                                        product.sizeStocks
+                                                                            ? isSelected
+                                                                                ? 'border-[#771f48] bg-[#771f48] text-white'
+                                                                                : isAvailable
+                                                                                  ? 'border-[#771f48] text-[#771f48] hover:bg-[#771f48] hover:text-white'
+                                                                                  : 'cursor-not-allowed border-gray-300 text-gray-400'
+                                                                            : 'border-[#771f48] text-[#771f48]'
+                                                                    }`}
+                                                                    style={
+                                                                        !product.sizeStocks
+                                                                            ? {
+                                                                                  borderColor:
+                                                                                      '#771f48',
+                                                                                  color: '#771f48',
+                                                                              }
+                                                                            : undefined
+                                                                    }
+                                                                >
+                                                                    <span>
+                                                                        {size}
+                                                                    </span>
+                                                                    {product.sizeStocks &&
+                                                                        stockQty !==
+                                                                            undefined && (
+                                                                            <span
+                                                                                className={`ml-2 text-xs ${isSelected ? 'text-white' : isAvailable ? 'text-gray-500' : 'text-gray-400'}`}
+                                                                            >
+                                                                                (
+                                                                                {
+                                                                                    stockQty
+                                                                                }
+                                                                                )
+                                                                            </span>
+                                                                        )}
+                                                                </button>
+                                                            );
+                                                        },
                                                     )}
                                                 </div>
+                                                {product.sizeStocks &&
+                                                    selectedSize && (
+                                                        <p className="mt-3 text-sm font-medium text-green-600">
+                                                            ✓ Size{' '}
+                                                            {selectedSize}{' '}
+                                                            selected
+                                                        </p>
+                                                    )}
                                             </div>
                                         )}
                                     </div>

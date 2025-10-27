@@ -4,12 +4,13 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-use App\Models\Category;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Log;
+use App\Models\ProductSizeStock;
 use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ProductsController extends Controller
 {
@@ -19,15 +20,15 @@ class ProductsController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Product::with(['category']);
+            $query = Product::with(['category', 'sizeStocks']);
 
             // Apply filters
-            if ($request->has('search') && !empty($request->search)) {
-                $query->where('name', 'like', '%' . $request->search . '%')
-                      ->orWhere('description', 'like', '%' . $request->search . '%');
+            if ($request->has('search') && ! empty($request->search)) {
+                $query->where('name', 'like', '%'.$request->search.'%')
+                    ->orWhere('description', 'like', '%'.$request->search.'%');
             }
 
-            if ($request->has('category') && !empty($request->category)) {
+            if ($request->has('category') && ! empty($request->category)) {
                 $query->where('category_id', $request->category);
             }
 
@@ -39,19 +40,19 @@ class ProductsController extends Controller
                 $query->where('price', '<=', $request->price_max);
             }
 
-            if ($request->has('stock') && !empty($request->stock)) {
+            if ($request->has('stock') && ! empty($request->stock)) {
                 $query->where('stock', $request->stock);
             }
 
-            if ($request->has('color') && !empty($request->color)) {
-                $query->where('color', 'like', '%' . $request->color . '%');
+            if ($request->has('color') && ! empty($request->color)) {
+                $query->where('color', 'like', '%'.$request->color.'%');
             }
 
-            if ($request->has('foot_numbers') && !empty($request->foot_numbers)) {
-                $query->where('foot_numbers', 'like', '%' . $request->foot_numbers . '%');
+            if ($request->has('foot_numbers') && ! empty($request->foot_numbers)) {
+                $query->where('foot_numbers', 'like', '%'.$request->foot_numbers.'%');
             }
 
-            if ($request->has('gender') && !empty($request->gender)) {
+            if ($request->has('gender') && ! empty($request->gender)) {
                 if (is_array($request->gender)) {
                     $query->whereIn('gender', $request->gender);
                 } else {
@@ -62,7 +63,7 @@ class ProductsController extends Controller
             // Apply sorting
             $sortBy = $request->get('sort_by', 'created_at');
             $sortOrder = $request->get('sort_order', 'desc');
-            
+
             // Handle frontend sorting format
             if ($sortBy === 'price-asc') {
                 $sortBy = 'price';
@@ -77,7 +78,7 @@ class ProductsController extends Controller
                 $sortBy = 'created_at';
                 $sortOrder = 'desc';
             }
-            
+
             $allowedSortFields = ['name', 'price', 'stock', 'color', 'created_at'];
             if (in_array($sortBy, $allowedSortFields)) {
                 $query->orderBy($sortBy, $sortOrder);
@@ -94,21 +95,37 @@ class ProductsController extends Controller
             $perPage = min($request->get('per_page', 20), 100); // Max 100 items per page
             $products = $query->paginate($perPage);
 
-            // Add campaign prices to products
+            // Add campaign prices to products and format sizeStocks
             $products->getCollection()->transform(function ($product) {
                 $activeCampaign = \App\Models\Campaign::where('product_id', $product->id)
                     ->where('is_active', true)
                     ->where('start_date', '<=', now())
                     ->where('end_date', '>=', now())
                     ->first();
-                
+
                 if ($activeCampaign) {
                     $product->campaign_price = $activeCampaign->price;
                     $product->campaign_id = $activeCampaign->id;
                     $product->campaign_name = $activeCampaign->name;
                     $product->campaign_end_date = $activeCampaign->end_date;
                 }
-                
+
+                // Add media library image URL
+                $product->image_url = $product->image_url; // Uses accessor from model
+
+                // Format sizeStocks as key-value object for frontend
+                if ($product->relationLoaded('sizeStocks') && $product->sizeStocks->count() > 0) {
+                    $formattedSizeStocks = $product->sizeStocks->mapWithKeys(function ($sizeStock) {
+                        return [$sizeStock->size => [
+                            'quantity' => $sizeStock->quantity,
+                            'stock_status' => $sizeStock->stock_status,
+                        ]];
+                    })->toArray();
+                    $product->sizeStocks = $formattedSizeStocks;
+                } else {
+                    $product->sizeStocks = null; // No size-specific stock
+                }
+
                 return $product;
             });
 
@@ -116,15 +133,15 @@ class ProductsController extends Controller
             return response()->json($products, 200);
 
         } catch (Exception $e) {
-            Log::error('Error fetching products: ' . $e->getMessage(), [
+            Log::error('Error fetching products: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
+                'request' => $request->all(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve products',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
     }
@@ -139,52 +156,89 @@ class ProductsController extends Controller
                 'name' => 'required|string|max:255|unique:products',
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0|max:999999.99',
-                'image' => 'nullable|string|max:500',
-                'stock' => 'required|string|in:in stock,out of stock,low stock',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'stock' => 'nullable|integer|min:0',
+                'size_stocks' => 'nullable|string',
                 'foot_numbers' => 'nullable|string|max:255',
                 'color' => 'nullable|string|max:255',
                 'category_id' => 'required|exists:categories,id',
-                'gender' => 'required|string|in:male,female,unisex'
+                'gender' => 'required|string|in:male,female,unisex',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
+
+            DB::beginTransaction();
 
             $product = Product::create([
                 'name' => $request->name,
                 'description' => $request->description,
                 'price' => $request->price,
-                'image' => $request->image,
-                'stock' => $request->stock,
+                'image' => null,
+                'stock_quantity' => $request->stock ?? 0,
                 'foot_numbers' => $request->foot_numbers,
                 'color' => $request->color,
                 'category_id' => $request->category_id,
-                'gender' => $request->gender
+                'gender' => $request->gender,
             ]);
 
-            $product->load('category');
+            // Handle image upload with Media Library
+            if ($request->hasFile('image')) {
+                $product->addMediaFromRequest('image')
+                    ->toMediaCollection('images');
+            }
+
+            // Handle size-specific stocks
+            if ($request->has('size_stocks') && ! empty($request->size_stocks)) {
+                $sizeStocksData = json_decode($request->size_stocks, true);
+                if (is_array($sizeStocksData)) {
+                    foreach ($sizeStocksData as $size => $data) {
+                        if (isset($data['quantity']) && $data['quantity'] > 0) {
+                            ProductSizeStock::create([
+                                'product_id' => $product->id,
+                                'size' => $size,
+                                'quantity' => $data['quantity'],
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            $product->load(['category', 'sizeStocks']);
+
+            // Format response with sizeStocks as associative array
+            $productData = $product->toArray();
+            $productData['sizeStocks'] = $product->sizeStocks->mapWithKeys(function ($stock) {
+                return [$stock->size => [
+                    'quantity' => $stock->quantity,
+                    'stock_status' => $stock->stock_status,
+                ]];
+            })->toArray();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Product created successfully',
-                'data' => $product
+                'data' => $productData,
             ], 201);
 
         } catch (Exception $e) {
-            Log::error('Error creating product: ' . $e->getMessage(), [
+            DB::rollBack();
+            Log::error('Error creating product: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
+                'request' => $request->all(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create product',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
     }
@@ -195,31 +249,51 @@ class ProductsController extends Controller
     public function show(string $id): JsonResponse
     {
         try {
-            $product = Product::with(['category'])->find($id);
+            $product = Product::with(['category', 'sizeStocks'])->find($id);
 
-            if (!$product) {
+            if (! $product) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product not found'
+                    'message' => 'Product not found',
                 ], 404);
             }
+
+            // Format product data with sizeStocks as object
+            $productData = $product->toArray();
+
+            // Format sizeStocks as key-value object for frontend
+            if (isset($productData['size_stocks']) && count($productData['size_stocks']) > 0) {
+                $formattedSizeStocks = [];
+                foreach ($productData['size_stocks'] as $sizeStock) {
+                    $formattedSizeStocks[$sizeStock['size']] = [
+                        'quantity' => $sizeStock['quantity'],
+                        'stock_status' => $sizeStock['stock_status'] ?? 'in stock',
+                    ];
+                }
+                $productData['sizeStocks'] = $formattedSizeStocks;
+            } else {
+                $productData['sizeStocks'] = null;
+            }
+
+            // Remove the size_stocks array format
+            unset($productData['size_stocks']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Product retrieved successfully',
-                'data' => $product
+                'data' => $productData,
             ], 200);
 
         } catch (Exception $e) {
-            Log::error('Error fetching product: ' . $e->getMessage(), [
+            Log::error('Error fetching product: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'product_id' => $id
+                'product_id' => $id,
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve product',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
     }
@@ -232,54 +306,105 @@ class ProductsController extends Controller
         try {
             $product = Product::find($id);
 
-            if (!$product) {
+            if (! $product) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product not found'
+                    'message' => 'Product not found',
                 ], 404);
             }
 
             $validator = Validator::make($request->all(), [
-                'name' => 'sometimes|required|string|max:255|unique:products,name,' . $id,
+                'name' => 'sometimes|required|string|max:255|unique:products,name,'.$id,
                 'description' => 'sometimes|nullable|string',
                 'price' => 'sometimes|required|numeric|min:0|max:999999.99',
-                'image' => 'sometimes|nullable|string|max:500',
-                'stock' => 'sometimes|required|string|in:in stock,out of stock,low stock',
+                'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'stock' => 'sometimes|nullable|integer|min:0',
+                'size_stocks' => 'sometimes|nullable|string',
                 'foot_numbers' => 'sometimes|nullable|string|max:255',
                 'color' => 'sometimes|nullable|string|max:255',
                 'category_id' => 'sometimes|required|exists:categories,id',
-                'gender' => 'sometimes|required|string|in:male,female,unisex'
+                'gender' => 'sometimes|required|string|in:male,female,unisex',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
-            $product->update($request->only(['name', 'description', 'price', 'image', 'stock', 'foot_numbers', 'color', 'category_id', 'gender']));
+            DB::beginTransaction();
 
-            $product->load('category');
+            // Map stock input to stock_quantity
+            $updateData = $request->only(['name', 'description', 'price', 'foot_numbers', 'color', 'category_id', 'gender']);
+            if ($request->has('stock')) {
+                $updateData['stock_quantity'] = $request->stock;
+            }
+            $product->update($updateData);
+
+            // Handle image upload with Media Library
+            if ($request->hasFile('image')) {
+                // Clear old images
+                $product->clearMediaCollection('images');
+                // Add new image
+                $product->addMediaFromRequest('image')
+                    ->toMediaCollection('images');
+            }
+
+            // Handle size-specific stocks update
+            if ($request->has('size_stocks')) {
+                // Delete existing size stocks
+                $product->sizeStocks()->delete();
+
+                // Create new size stocks
+                if (! empty($request->size_stocks)) {
+                    $sizeStocksData = json_decode($request->size_stocks, true);
+                    if (is_array($sizeStocksData)) {
+                        foreach ($sizeStocksData as $size => $data) {
+                            if (isset($data['quantity']) && $data['quantity'] > 0) {
+                                ProductSizeStock::create([
+                                    'product_id' => $product->id,
+                                    'size' => $size,
+                                    'quantity' => $data['quantity'],
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            $product->load(['category', 'sizeStocks']);
+
+            // Format response with sizeStocks as associative array
+            $productData = $product->toArray();
+            $productData['sizeStocks'] = $product->sizeStocks->mapWithKeys(function ($stock) {
+                return [$stock->size => [
+                    'quantity' => $stock->quantity,
+                    'stock_status' => $stock->stock_status,
+                ]];
+            })->toArray();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Product updated successfully',
-                'data' => $product
+                'data' => $productData,
             ], 200);
 
         } catch (Exception $e) {
-            Log::error('Error updating product: ' . $e->getMessage(), [
+            DB::rollBack();
+            Log::error('Error updating product: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'product_id' => $id,
-                'request' => $request->all()
+                'request' => $request->all(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update product',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
     }
@@ -292,30 +417,30 @@ class ProductsController extends Controller
         try {
             $product = Product::find($id);
 
-            if (!$product) {
+            if (! $product) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product not found'
+                    'message' => 'Product not found',
                 ], 404);
             }
-            
+
             $product->delete();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Product deleted successfully'
+                'message' => 'Product deleted successfully',
             ], 200);
 
         } catch (Exception $e) {
-            Log::error('Error deleting product: ' . $e->getMessage(), [
+            Log::error('Error deleting product: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'product_id' => $id
+                'product_id' => $id,
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete product',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
     }
@@ -328,14 +453,14 @@ class ProductsController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'product_ids' => 'required|array|min:1',
-                'product_ids.*' => 'exists:products,id'
+                'product_ids.*' => 'exists:products,id',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
@@ -344,19 +469,19 @@ class ProductsController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Successfully deleted {$deletedCount} products",
-                'deleted_count' => $deletedCount
+                'deleted_count' => $deletedCount,
             ], 200);
 
         } catch (Exception $e) {
-            Log::error('Error bulk deleting products: ' . $e->getMessage(), [
+            Log::error('Error bulk deleting products: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
+                'request' => $request->all(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete products',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
     }
@@ -369,45 +494,77 @@ class ProductsController extends Controller
         try {
             $product = Product::find($id);
 
-            if (!$product) {
+            if (! $product) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product not found'
+                    'message' => 'Product not found',
                 ], 404);
             }
 
             $validator = Validator::make($request->all(), [
-                'stock' => 'required|string|in:in stock,out of stock,low stock'
+                'stock' => 'nullable|integer|min:0',
+                'size_stocks' => 'nullable|string',
             ]);
 
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
-                    'errors' => $validator->errors()
+                    'errors' => $validator->errors(),
                 ], 422);
             }
 
-            $product->stock = $request->stock;
-            $product->save();
+            DB::beginTransaction();
+
+            // Update stock_quantity if provided
+            if ($request->has('stock')) {
+                $product->update(['stock_quantity' => $request->stock]);
+            }
+
+            // Handle size-specific stocks update
+            if ($request->has('size_stocks')) {
+                // Delete existing size stocks
+                $product->sizeStocks()->delete();
+
+                // Create new size stocks
+                if (! empty($request->size_stocks)) {
+                    $sizeStocksData = json_decode($request->size_stocks, true);
+                    if (is_array($sizeStocksData)) {
+                        foreach ($sizeStocksData as $size => $data) {
+                            if (isset($data['quantity']) && $data['quantity'] > 0) {
+                                ProductSizeStock::create([
+                                    'product_id' => $product->id,
+                                    'size' => $size,
+                                    'quantity' => $data['quantity'],
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            $product->load('sizeStocks');
 
             return response()->json([
                 'success' => true,
                 'message' => 'Product stock updated successfully',
-                'data' => $product
+                'data' => $product,
             ], 200);
 
         } catch (Exception $e) {
-            Log::error('Error updating product stock: ' . $e->getMessage(), [
+            DB::rollBack();
+            Log::error('Error updating product stock: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'product_id' => $id,
-                'request' => $request->all()
+                'request' => $request->all(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update product stock',
-                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
     }

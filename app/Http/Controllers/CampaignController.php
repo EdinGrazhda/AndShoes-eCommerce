@@ -62,6 +62,31 @@ class CampaignController extends Controller
     }
 
     /**
+     * Get active campaigns with their products
+     */
+    public function active()
+    {
+        $campaigns = Campaign::with(['products' => function ($query) {
+                $query->select('products.id', 'name', 'description', 'price', 'image', 'stock', 'foot_numbers', 'color', 'gender', 'category_id', 'created_at');
+            }])
+            ->where('is_active', true)
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $campaigns
+        ]);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()

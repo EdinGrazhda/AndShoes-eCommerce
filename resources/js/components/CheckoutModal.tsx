@@ -103,6 +103,7 @@ export const CheckoutModal = memo(
                         customer_city: customerInfo.city,
                         customer_country: customerInfo.country,
                         product_id: product.id,
+                        product_price: product.price, // Send the actual price (campaign or regular)
                         product_size:
                             product.foot_numbers?.split(',')[0]?.trim() ||
                             'Standard',
