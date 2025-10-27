@@ -143,7 +143,7 @@ class ProductsController extends Controller
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0|max:999999.99',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // Now accepts file upload
-                'stock' => 'required|string|in:in stock,out of stock,low stock',
+                'stock' => 'required|integer|min:0',
                 'foot_numbers' => 'nullable|string|max:255',
                 'color' => 'nullable|string|max:255',
                 'category_id' => 'required|exists:categories,id',
@@ -163,7 +163,7 @@ class ProductsController extends Controller
                 'description' => $request->description,
                 'price' => $request->price,
                 'image' => null, // Will be set by media library
-                'stock' => $request->stock,
+                'stock_quantity' => $request->stock, // Map stock input to stock_quantity column
                 'foot_numbers' => $request->foot_numbers,
                 'color' => $request->color,
                 'category_id' => $request->category_id,
@@ -253,7 +253,7 @@ class ProductsController extends Controller
                 'description' => 'sometimes|nullable|string',
                 'price' => 'sometimes|required|numeric|min:0|max:999999.99',
                 'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // Now accepts file upload
-                'stock' => 'sometimes|required|string|in:in stock,out of stock,low stock',
+                'stock' => 'sometimes|required|integer|min:0',
                 'foot_numbers' => 'sometimes|nullable|string|max:255',
                 'color' => 'sometimes|nullable|string|max:255',
                 'category_id' => 'sometimes|required|exists:categories,id',
@@ -268,7 +268,12 @@ class ProductsController extends Controller
                 ], 422);
             }
 
-            $product->update($request->only(['name', 'description', 'price', 'stock', 'foot_numbers', 'color', 'category_id', 'gender']));
+            // Map stock input to stock_quantity
+            $updateData = $request->only(['name', 'description', 'price', 'foot_numbers', 'color', 'category_id', 'gender']);
+            if ($request->has('stock')) {
+                $updateData['stock_quantity'] = $request->stock;
+            }
+            $product->update($updateData);
 
             // Handle image upload with Media Library
             if ($request->hasFile('image')) {
@@ -395,7 +400,7 @@ class ProductsController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'stock' => 'required|string|in:in stock,out of stock,low stock'
+                'stock' => 'required|integer|min:0'
             ]);
 
             if ($validator->fails()) {
@@ -406,7 +411,7 @@ class ProductsController extends Controller
                 ], 422);
             }
 
-            $product->stock = $request->stock;
+            $product->stock_quantity = $request->stock; // Map stock input to stock_quantity column
             $product->save();
 
             return response()->json([

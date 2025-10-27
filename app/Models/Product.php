@@ -17,6 +17,7 @@ class Product extends Model implements HasMedia
         'price', 
         'image', 
         'stock', 
+        'stock_quantity',
         'foot_numbers', 
         'color',
         'category_id',
@@ -25,9 +26,26 @@ class Product extends Model implements HasMedia
 
     protected $casts = [
         'price' => 'decimal:2',
+        'stock_quantity' => 'integer',
     ];
 
-    protected $appends = ['image_url'];
+    protected $appends = ['image_url', 'stock_status'];
+
+    /**
+     * Get stock status based on quantity
+     * 0 = out of stock
+     * 1-10 = low stock
+     * 11+ = in stock
+     */
+    public function getStockStatusAttribute(): string
+    {
+        if ($this->stock_quantity === 0) {
+            return 'out of stock';
+        } elseif ($this->stock_quantity <= 10) {
+            return 'low stock';
+        }
+        return 'in stock';
+    }
 
     /**
      * Register media collections

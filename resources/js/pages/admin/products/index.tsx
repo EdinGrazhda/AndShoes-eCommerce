@@ -35,7 +35,9 @@ interface Product {
     description?: string;
     image?: string;
     image_url?: string; // Add Media Library URL
-    stock: 'in stock' | 'out of stock' | 'low stock';
+    stock: number; // Now represents quantity
+    stock_quantity?: number; // Backend field
+    stock_status?: string; // Calculated status from backend
     foot_numbers?: string;
     color?: string;
     gender?: 'male' | 'female' | 'unisex';
@@ -492,19 +494,28 @@ export default function Products({
 
                                                     {/* Stock */}
                                                     <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span
-                                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                                                product.stock ===
-                                                                'in stock'
-                                                                    ? 'bg-green-100 text-green-800'
-                                                                    : product.stock ===
-                                                                        'low stock'
-                                                                      ? 'bg-yellow-100 text-yellow-800'
-                                                                      : 'bg-red-100 text-red-800'
-                                                            }`}
-                                                        >
-                                                            {product.stock}
-                                                        </span>
+                                                        <div className="flex flex-col gap-1">
+                                                            <span
+                                                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                                                    product.stock_status ===
+                                                                    'in stock'
+                                                                        ? 'bg-green-100 text-green-800'
+                                                                        : product.stock_status ===
+                                                                            'low stock'
+                                                                          ? 'bg-yellow-100 text-yellow-800'
+                                                                          : 'bg-red-100 text-red-800'
+                                                                }`}
+                                                            >
+                                                                {
+                                                                    product.stock_status
+                                                                }
+                                                            </span>
+                                                            <span className="text-xs text-gray-500">
+                                                                Qty:{' '}
+                                                                {product.stock_quantity ??
+                                                                    product.stock}
+                                                            </span>
+                                                        </div>
                                                     </td>
 
                                                     {/* Color */}
@@ -679,19 +690,28 @@ export default function Products({
                                                     <div className="mb-1.5 text-xs font-semibold text-gray-500">
                                                         Stock Status
                                                     </div>
-                                                    <span
-                                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                                                            product.stock ===
-                                                            'in stock'
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : product.stock ===
-                                                                    'low stock'
-                                                                  ? 'bg-yellow-100 text-yellow-800'
-                                                                  : 'bg-red-100 text-red-800'
-                                                        }`}
-                                                    >
-                                                        {product.stock}
-                                                    </span>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span
+                                                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
+                                                                product.stock_status ===
+                                                                'in stock'
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : product.stock_status ===
+                                                                        'low stock'
+                                                                      ? 'bg-yellow-100 text-yellow-800'
+                                                                      : 'bg-red-100 text-red-800'
+                                                            }`}
+                                                        >
+                                                            {
+                                                                product.stock_status
+                                                            }
+                                                        </span>
+                                                        <span className="text-xs text-gray-600">
+                                                            Quantity:{' '}
+                                                            {product.stock_quantity ??
+                                                                product.stock}
+                                                        </span>
+                                                    </div>
                                                 </div>
 
                                                 {/* Color */}
