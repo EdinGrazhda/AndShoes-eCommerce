@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductSizeStock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
@@ -84,7 +86,7 @@ class OrderController extends Controller
             'customer_city' => 'required|string|max:100',
             'customer_country' => 'required|in:albania,kosovo,macedonia',
             'product_id' => 'required|exists:products,id',
-            'product_price' => 'required|numeric|min:0', // Accept price from frontend
+            'product_price' => 'required|numeric|min:0',
             'product_size' => 'nullable|string|max:50',
             'product_color' => 'nullable|string|max:50',
             'quantity' => 'required|integer|min:1|max:100',
@@ -98,35 +100,94 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $product = Product::findOrFail($request->product_id);
-        
-        // Use the price sent from frontend (which could be campaign price or regular price)
-        $productPrice = $request->product_price;
-        $totalAmount = $productPrice * $request->quantity;
+        try {
+            DB::beginTransaction();
 
-        $order = Order::create([
-            'customer_full_name' => $request->customer_full_name,
-            'customer_email' => $request->customer_email,
-            'customer_phone' => $request->customer_phone,
-            'customer_address' => $request->customer_address,
-            'customer_city' => $request->customer_city,
-            'customer_country' => $request->customer_country,
-            'product_id' => $request->product_id,
-            'product_name' => $product->name,
-            'product_price' => $productPrice, // Use the sent price (campaign or regular)
-            'product_image' => $product->image,
-            'product_size' => $request->product_size,
-            'product_color' => $request->product_color,
-            'quantity' => $request->quantity,
-            'total_amount' => $totalAmount,
-            'payment_method' => 'cash',
-            'notes' => $request->notes,
-        ]);
+            $product = Product::with('sizeStocks')->findOrFail($request->product_id);
+            
+            // Check if product has size-specific stock tracking
+            if ($product->sizeStocks()->count() > 0) {
+                // Product uses per-size stock tracking
+                if (empty($request->product_size)) {
+                    return response()->json([
+                        'message' => 'Product size is required for this product',
+                    ], 422);
+                }
 
-        return response()->json([
-            'message' => 'Order created successfully',
-            'order' => $order->load('product'),
-        ], 201);
+                // Find and lock the size stock for update
+                $sizeStock = ProductSizeStock::where('product_id', $product->id)
+                    ->where('size', $request->product_size)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$sizeStock) {
+                    return response()->json([
+                        'message' => 'Selected size is not available',
+                    ], 422);
+                }
+
+                if ($sizeStock->quantity < $request->quantity) {
+                    return response()->json([
+                        'message' => "Insufficient stock for size {$request->product_size}. Only {$sizeStock->quantity} available.",
+                    ], 422);
+                }
+
+                // Decrement the size-specific stock
+                $sizeStock->quantity -= $request->quantity;
+                $sizeStock->save();
+            } else {
+                // Product uses total stock tracking (backward compatibility)
+                if ($product->stock_quantity < $request->quantity) {
+                    return response()->json([
+                        'message' => "Insufficient stock. Only {$product->stock_quantity} available.",
+                    ], 422);
+                }
+
+                $product->update(['stock_quantity' => $product->stock_quantity - $request->quantity]);
+            }
+            
+            // Use the price sent from frontend (which could be campaign price or regular price)
+            $productPrice = $request->product_price;
+            $totalAmount = $productPrice * $request->quantity;
+
+            $order = Order::create([
+                'customer_full_name' => $request->customer_full_name,
+                'customer_email' => $request->customer_email,
+                'customer_phone' => $request->customer_phone,
+                'customer_address' => $request->customer_address,
+                'customer_city' => $request->customer_city,
+                'customer_country' => $request->customer_country,
+                'product_id' => $request->product_id,
+                'product_name' => $product->name,
+                'product_price' => $productPrice,
+                'product_image' => $product->image,
+                'product_size' => $request->product_size,
+                'product_color' => $request->product_color,
+                'quantity' => $request->quantity,
+                'total_amount' => $totalAmount,
+                'payment_method' => 'cash',
+                'notes' => $request->notes,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Order created successfully',
+                'order' => $order->load('product'),
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error creating order: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to create order',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
     }
 
     public function show(Order $order): JsonResponse
@@ -188,8 +249,22 @@ class OrderController extends Controller
         ]);
 
         try {
+            // Load product with category and size stocks
+            $product->load(['category', 'sizeStocks']);
+            
+            // Format sizeStocks as associative array for frontend
+            $productData = $product->toArray();
+            if ($product->sizeStocks->isNotEmpty()) {
+                $productData['sizeStocks'] = $product->sizeStocks->mapWithKeys(function ($stock) {
+                    return [$stock->size => [
+                        'quantity' => $stock->quantity,
+                        'stock_status' => $stock->stock_status
+                    ]];
+                })->toArray();
+            }
+            
             return Inertia::render('checkout/index', [
-                'product' => $product->load('category'),
+                'product' => $productData,
             ]);
         } catch (\Exception $e) {
             Log::error('Checkout error', [

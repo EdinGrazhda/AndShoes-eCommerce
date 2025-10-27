@@ -10,18 +10,18 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 class Product extends Model implements HasMedia
 {
     use InteractsWithMedia;
-   
+
     protected $fillable = [
-        'name', 
-        'description', 
-        'price', 
-        'image', 
-        'stock', 
+        'name',
+        'description',
+        'price',
+        'image',
+        'stock',
         'stock_quantity',
-        'foot_numbers', 
+        'foot_numbers',
         'color',
         'category_id',
-        'gender'
+        'gender',
     ];
 
     protected $casts = [
@@ -29,22 +29,49 @@ class Product extends Model implements HasMedia
         'stock_quantity' => 'integer',
     ];
 
-    protected $appends = ['image_url', 'stock_status'];
+    protected $appends = ['image_url', 'stock_status', 'total_stock'];
 
     /**
-     * Get stock status based on quantity
+     * Get size-specific stock records
+     */
+    public function sizeStocks()
+    {
+        return $this->hasMany(ProductSizeStock::class);
+    }
+
+    /**
+     * Get total stock across all sizes
+     */
+    public function getTotalStockAttribute(): int
+    {
+        return $this->sizeStocks()->sum('quantity');
+    }
+
+    /**
+     * Get stock status based on total quantity across all sizes
      * 0 = out of stock
      * 1-10 = low stock
      * 11+ = in stock
      */
     public function getStockStatusAttribute(): string
     {
-        if ($this->stock_quantity === 0) {
+        $total = $this->total_stock;
+
+        if ($total === 0) {
             return 'out of stock';
-        } elseif ($this->stock_quantity <= 10) {
+        } elseif ($total <= 10) {
             return 'low stock';
         }
+
         return 'in stock';
+    }
+
+    /**
+     * Get stock quantity for backward compatibility
+     */
+    public function getStockQuantityAttribute(): int
+    {
+        return $this->total_stock;
     }
 
     /**
@@ -82,7 +109,7 @@ class Product extends Model implements HasMedia
         if ($this->hasMedia('images')) {
             return $this->getFirstMediaUrl('images', 'preview');
         }
-        
+
         // Fallback to old image column
         return $this->image ?? '/images/placeholder.jpg';
     }

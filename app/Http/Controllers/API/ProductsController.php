@@ -4,11 +4,13 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ProductSizeStock;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
 class ProductsController extends Controller
@@ -19,7 +21,7 @@ class ProductsController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = Product::with(['category']);
+            $query = Product::with(['category', 'sizeStocks']);
 
             // Apply filters
             if ($request->has('search') && !empty($request->search)) {
@@ -142,8 +144,9 @@ class ProductsController extends Controller
                 'name' => 'required|string|max:255|unique:products',
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0|max:999999.99',
-                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // Now accepts file upload
-                'stock' => 'required|integer|min:0',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'stock' => 'nullable|integer|min:0',
+                'size_stocks' => 'nullable|string',
                 'foot_numbers' => 'nullable|string|max:255',
                 'color' => 'nullable|string|max:255',
                 'category_id' => 'required|exists:categories,id',
@@ -158,12 +161,14 @@ class ProductsController extends Controller
                 ], 422);
             }
 
+            DB::beginTransaction();
+
             $product = Product::create([
                 'name' => $request->name,
                 'description' => $request->description,
                 'price' => $request->price,
-                'image' => null, // Will be set by media library
-                'stock_quantity' => $request->stock, // Map stock input to stock_quantity column
+                'image' => null,
+                'stock_quantity' => $request->stock ?? 0,
                 'foot_numbers' => $request->foot_numbers,
                 'color' => $request->color,
                 'category_id' => $request->category_id,
@@ -176,15 +181,43 @@ class ProductsController extends Controller
                     ->toMediaCollection('images');
             }
 
-            $product->load('category');
+            // Handle size-specific stocks
+            if ($request->has('size_stocks') && !empty($request->size_stocks)) {
+                $sizeStocksData = json_decode($request->size_stocks, true);
+                if (is_array($sizeStocksData)) {
+                    foreach ($sizeStocksData as $size => $data) {
+                        if (isset($data['quantity']) && $data['quantity'] > 0) {
+                            ProductSizeStock::create([
+                                'product_id' => $product->id,
+                                'size' => $size,
+                                'quantity' => $data['quantity']
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            $product->load(['category', 'sizeStocks']);
+            
+            // Format response with sizeStocks as associative array
+            $productData = $product->toArray();
+            $productData['sizeStocks'] = $product->sizeStocks->mapWithKeys(function ($stock) {
+                return [$stock->size => [
+                    'quantity' => $stock->quantity,
+                    'stock_status' => $stock->stock_status
+                ]];
+            })->toArray();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Product created successfully',
-                'data' => $product
+                'data' => $productData
             ], 201);
 
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error('Error creating product: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'request' => $request->all()
@@ -252,8 +285,9 @@ class ProductsController extends Controller
                 'name' => 'sometimes|required|string|max:255|unique:products,name,' . $id,
                 'description' => 'sometimes|nullable|string',
                 'price' => 'sometimes|required|numeric|min:0|max:999999.99',
-                'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048', // Now accepts file upload
-                'stock' => 'sometimes|required|integer|min:0',
+                'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+                'stock' => 'sometimes|nullable|integer|min:0',
+                'size_stocks' => 'sometimes|nullable|string',
                 'foot_numbers' => 'sometimes|nullable|string|max:255',
                 'color' => 'sometimes|nullable|string|max:255',
                 'category_id' => 'sometimes|required|exists:categories,id',
@@ -267,6 +301,8 @@ class ProductsController extends Controller
                     'errors' => $validator->errors()
                 ], 422);
             }
+
+            DB::beginTransaction();
 
             // Map stock input to stock_quantity
             $updateData = $request->only(['name', 'description', 'price', 'foot_numbers', 'color', 'category_id', 'gender']);
@@ -284,15 +320,49 @@ class ProductsController extends Controller
                     ->toMediaCollection('images');
             }
 
-            $product->load('category');
+            // Handle size-specific stocks update
+            if ($request->has('size_stocks')) {
+                // Delete existing size stocks
+                $product->sizeStocks()->delete();
+                
+                // Create new size stocks
+                if (!empty($request->size_stocks)) {
+                    $sizeStocksData = json_decode($request->size_stocks, true);
+                    if (is_array($sizeStocksData)) {
+                        foreach ($sizeStocksData as $size => $data) {
+                            if (isset($data['quantity']) && $data['quantity'] > 0) {
+                                ProductSizeStock::create([
+                                    'product_id' => $product->id,
+                                    'size' => $size,
+                                    'quantity' => $data['quantity']
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            $product->load(['category', 'sizeStocks']);
+            
+            // Format response with sizeStocks as associative array
+            $productData = $product->toArray();
+            $productData['sizeStocks'] = $product->sizeStocks->mapWithKeys(function ($stock) {
+                return [$stock->size => [
+                    'quantity' => $stock->quantity,
+                    'stock_status' => $stock->stock_status
+                ]];
+            })->toArray();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Product updated successfully',
-                'data' => $product
+                'data' => $productData
             ], 200);
 
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error('Error updating product: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'product_id' => $id,
@@ -400,7 +470,8 @@ class ProductsController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'stock' => 'required|integer|min:0'
+                'stock' => 'nullable|integer|min:0',
+                'size_stocks' => 'nullable|string'
             ]);
 
             if ($validator->fails()) {
@@ -411,8 +482,38 @@ class ProductsController extends Controller
                 ], 422);
             }
 
-            $product->stock_quantity = $request->stock; // Map stock input to stock_quantity column
-            $product->save();
+            DB::beginTransaction();
+
+            // Update stock_quantity if provided
+            if ($request->has('stock')) {
+                $product->update(['stock_quantity' => $request->stock]);
+            }
+
+            // Handle size-specific stocks update
+            if ($request->has('size_stocks')) {
+                // Delete existing size stocks
+                $product->sizeStocks()->delete();
+                
+                // Create new size stocks
+                if (!empty($request->size_stocks)) {
+                    $sizeStocksData = json_decode($request->size_stocks, true);
+                    if (is_array($sizeStocksData)) {
+                        foreach ($sizeStocksData as $size => $data) {
+                            if (isset($data['quantity']) && $data['quantity'] > 0) {
+                                ProductSizeStock::create([
+                                    'product_id' => $product->id,
+                                    'size' => $size,
+                                    'quantity' => $data['quantity']
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+
+            $product->load('sizeStocks');
 
             return response()->json([
                 'success' => true,
@@ -421,6 +522,7 @@ class ProductsController extends Controller
             ], 200);
 
         } catch (Exception $e) {
+            DB::rollBack();
             Log::error('Error updating product stock: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
                 'product_id' => $id,

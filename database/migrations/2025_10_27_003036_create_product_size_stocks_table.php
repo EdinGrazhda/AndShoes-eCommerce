@@ -13,7 +13,13 @@ return new class extends Migration
     {
         Schema::create('product_size_stocks', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->string('size', 10);
+            $table->integer('quantity')->default(0);
             $table->timestamps();
+            
+            // Ensure unique size per product
+            $table->unique(['product_id', 'size']);
         });
     }
 

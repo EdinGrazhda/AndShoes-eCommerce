@@ -73,19 +73,56 @@ export default function ProductModal({
     // Reset form when product changes or modal opens
     useEffect(() => {
         if (isOpen) {
+            // If product contains sizeStocks, normalize into map { size: quantity }
+            let initialSizeStocks: Record<string, number> = {};
+            if (product && (product as any).sizeStocks) {
+                const ss = (product as any).sizeStocks;
+                // If it's an array of {size, quantity}
+                if (Array.isArray(ss)) {
+                    ss.forEach((item: any) => {
+                        if (item && item.size) {
+                            initialSizeStocks[item.size] =
+                                Number(item.quantity) || 0;
+                        }
+                    });
+                } else if (typeof ss === 'object') {
+                    // If it's already a map { size: { quantity } } or { size: qty }
+                    Object.keys(ss).forEach((k) => {
+                        const val = ss[k];
+                        if (
+                            val &&
+                            typeof val === 'object' &&
+                            'quantity' in val
+                        ) {
+                            initialSizeStocks[k] = Number(val.quantity) || 0;
+                        } else {
+                            initialSizeStocks[k] = Number(val) || 0;
+                        }
+                    });
+                }
+            }
+
+            const initialTotal = Object.values(initialSizeStocks).reduce(
+                (s, v) => s + v,
+                0,
+            );
+
             setFormData({
                 name: product?.name || '',
                 description: product?.description || '',
                 price: product?.price?.toString() || '',
                 image: product?.image || '',
                 imageFile: null,
-                stock: product?.stock_quantity ?? product?.stock ?? 0,
+                stock:
+                    initialTotal > 0
+                        ? initialTotal
+                        : (product?.stock_quantity ?? product?.stock ?? 0),
                 foot_numbers: product?.foot_numbers || '',
                 color: product?.color || '',
                 category_id:
                     product?.category_id || product?.category?.id || '',
                 gender: product?.gender || 'unisex',
-                sizeStocks: {},
+                sizeStocks: initialSizeStocks,
             });
             setErrors({});
         }
@@ -127,6 +164,29 @@ export default function ProductModal({
             } else if (formData.image) {
                 // Fallback to image URL if no file selected
                 payload.append('image', formData.image);
+            }
+
+            // Attach size-specific stocks if provided
+            if (Object.keys(formData.sizeStocks).length > 0) {
+                // Convert to the format backend expects: {"38": {"quantity": 10}, "39": {"quantity": 20}}
+                const sizeStocksObject: Record<string, { quantity: number }> =
+                    {};
+                Object.entries(formData.sizeStocks).forEach(
+                    ([size, quantity]) => {
+                        sizeStocksObject[size] = { quantity: Number(quantity) };
+                    },
+                );
+                payload.append('size_stocks', JSON.stringify(sizeStocksObject));
+                // Keep total stock in sync
+                payload.set(
+                    'stock',
+                    String(
+                        Object.values(formData.sizeStocks).reduce(
+                            (s, v) => s + v,
+                            0,
+                        ),
+                    ),
+                );
             }
 
             console.log('Request payload with file:', formData.imageFile);
@@ -201,13 +261,21 @@ export default function ProductModal({
 
     // Helper function to handle size stock changes
     const handleSizeStockChange = (size: string, stock: number) => {
-        setFormData((prev) => ({
-            ...prev,
-            sizeStocks: {
+        setFormData((prev) => {
+            const newSizeStocks = {
                 ...prev.sizeStocks,
                 [size]: stock,
-            },
-        }));
+            };
+            const total = Object.values(newSizeStocks).reduce(
+                (s, v) => s + v,
+                0,
+            );
+            return {
+                ...prev,
+                sizeStocks: newSizeStocks,
+                stock: total,
+            };
+        });
     };
 
     // Helper function to remove a size from stock tracking
@@ -215,9 +283,14 @@ export default function ProductModal({
         setFormData((prev) => {
             const newSizeStocks = { ...prev.sizeStocks };
             delete newSizeStocks[size];
+            const total = Object.values(newSizeStocks).reduce(
+                (s, v) => s + v,
+                0,
+            );
             return {
                 ...prev,
                 sizeStocks: newSizeStocks,
+                stock: total,
             };
         });
     };
@@ -227,19 +300,21 @@ export default function ProductModal({
 
     // Helper function to auto-populate size stocks based on general stock quantity
     const autoPopulateSizeStocks = () => {
-        const defaultQuantity =
-            formData.stock > 0
-                ? Math.floor(formData.stock / availableSizes.length)
-                : 0;
+        if (availableSizes.length === 0) return;
+
+        const total = Number(formData.stock) || 0;
+        const base = Math.floor(total / availableSizes.length);
+        const remainder = total % availableSizes.length;
 
         const newSizeStocks: Record<string, number> = {};
-        availableSizes.forEach((size) => {
-            newSizeStocks[size] = defaultQuantity;
+        availableSizes.forEach((size, idx) => {
+            newSizeStocks[size] = base + (idx < remainder ? 1 : 0);
         });
 
         setFormData((prev) => ({
             ...prev,
             sizeStocks: newSizeStocks,
+            stock: Object.values(newSizeStocks).reduce((s, v) => s + v, 0),
         }));
     };
 
