@@ -1,5 +1,6 @@
 import { Minus, Plus, ShoppingCart, Star, X } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useCartStore } from '../store/cartStore';
 import type { Product } from '../types/store';
 
@@ -27,47 +28,78 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
     );
 
     const handleAddToCart = useCallback(() => {
-        if (product && product.stock !== 'out of stock') {
-            addItem(product, quantity);
-            onClose();
+        if (!product) return;
+
+        // If product has size-specific stock, require size selection
+        if (product.sizeStocks && Object.keys(product.sizeStocks).length > 0) {
+            if (!selectedSize) {
+                toast.error('Please select a size before adding to cart');
+                return;
+            }
+
+            const sizeStock = product.sizeStocks[selectedSize];
+            if (!sizeStock || sizeStock.quantity === 0) {
+                toast.error(`Size ${selectedSize} is out of stock`);
+                return;
+            }
+
+            // Check if requested quantity is available
+            if (quantity > sizeStock.quantity) {
+                toast.error(
+                    `Only ${sizeStock.quantity} available for size ${selectedSize}`,
+                );
+                return;
+            }
+        } else {
+            // Fallback to general stock check
+            if (product.stock === 'out of stock') {
+                toast.error('This product is out of stock');
+                return;
+            }
         }
-    }, [product, quantity, addItem, onClose]);
+
+        // Add to cart with selected size
+        addItem(
+            { ...product, selectedSize: selectedSize || undefined },
+            quantity,
+        );
+        toast.success('Added to cart successfully!');
+        onClose();
+    }, [product, quantity, selectedSize, addItem, onClose]);
+
+    // Parse available sizes and check stock - MOVED BEFORE early return
+    const getAvailableSizes = useCallback(() => {
+        if (!product) return [];
+
+        // If product has size-specific stock data, use it
+        if (product.sizeStocks && Object.keys(product.sizeStocks).length > 0) {
+            return Object.entries(product.sizeStocks)
+                .filter(([_, stockInfo]) => stockInfo.quantity > 0) // Only show sizes with stock > 0
+                .map(([size, stockInfo]) => ({
+                    size,
+                    stock: stockInfo.quantity,
+                    available: true, // All returned sizes are available
+                }))
+                .sort((a, b) => {
+                    const sizeA = parseFloat(a.size);
+                    const sizeB = parseFloat(b.size);
+                    return sizeA - sizeB;
+                });
+        }
+
+        // If no size-specific stock, don't show any sizes
+        // Products without sizeStocks data should not display size options
+        return [];
+    }, [product]);
+
+    const sizeInfo = getAvailableSizes();
+    const availableSizes = sizeInfo.filter((info) => info.available);
 
     // Early return AFTER all hooks are called
     if (!product) return null;
 
     const isOutOfStock = product.stock === 'out of stock';
     const maxQuantity = 10; // Set a reasonable max quantity
-
-    // Parse available sizes and check stock
-    const getAvailableSizes = () => {
-        if (
-            !product?.foot_numbers ||
-            typeof product.foot_numbers !== 'string'
-        ) {
-            return [];
-        }
-
-        try {
-            const allSizes = product.foot_numbers
-                .split(',')
-                .map((size) => size.trim())
-                .filter((size) => size.length > 0);
-
-            // Return simple size objects - always show sizes if they exist
-            return allSizes.map((size) => ({
-                size,
-                stock: 10, // Default stock
-                available: true, // Always available for now
-            }));
-        } catch (error) {
-            console.error('Error parsing sizes:', error);
-            return [];
-        }
-    };
-
-    const sizeInfo = getAvailableSizes();
-    const availableSizes = sizeInfo.filter((info) => info.available);
 
     return (
         <div
@@ -185,10 +217,16 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                         </div>
 
                         {/* Size Availability */}
-                        {product.foot_numbers && (
+                        {(product.foot_numbers ||
+                            (product.sizeStocks &&
+                                Object.keys(product.sizeStocks).length >
+                                    0)) && (
                             <div className="mb-6">
                                 <h4 className="mb-3 text-sm font-semibold text-gray-700">
-                                    Available Sizes (EU):
+                                    {product.sizeStocks &&
+                                    Object.keys(product.sizeStocks).length > 0
+                                        ? 'Select Size (EU):'
+                                        : 'Available Sizes (EU):'}
                                 </h4>
                                 <div className="grid grid-cols-4 gap-2">
                                     {sizeInfo.map((sizeItem) => (
@@ -206,14 +244,49 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                             <span className="text-sm font-medium">
                                                 {sizeItem.size}
                                             </span>
+                                            <span
+                                                className={`mt-0.5 block text-xs ${
+                                                    selectedSize ===
+                                                    sizeItem.size
+                                                        ? 'text-white/90'
+                                                        : sizeItem.stock <= 5
+                                                          ? 'text-orange-600'
+                                                          : 'text-gray-600'
+                                                }`}
+                                            >
+                                                {sizeItem.stock} in stock
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
                                 {selectedSize && (
                                     <p className="mt-2 text-sm text-[#771E49]">
                                         Selected size: EU {selectedSize}
+                                        {sizeInfo.find(
+                                            (s) => s.size === selectedSize,
+                                        )?.stock && (
+                                            <span className="ml-2 text-gray-600">
+                                                (
+                                                {
+                                                    sizeInfo.find(
+                                                        (s) =>
+                                                            s.size ===
+                                                            selectedSize,
+                                                    )?.stock
+                                                }{' '}
+                                                available)
+                                            </span>
+                                        )}
                                     </p>
                                 )}
+                                {product.sizeStocks &&
+                                    Object.keys(product.sizeStocks).length >
+                                        0 &&
+                                    !selectedSize && (
+                                        <p className="mt-2 text-sm text-orange-600">
+                                            Please select a size to continue
+                                        </p>
+                                    )}
                             </div>
                         )}
 
@@ -277,16 +350,44 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                         {/* Add to Cart Button */}
                         <button
                             onClick={handleAddToCart}
-                            disabled={isOutOfStock}
+                            disabled={
+                                isOutOfStock ||
+                                (!!product.sizeStocks &&
+                                    Object.keys(product.sizeStocks).length >
+                                        0 &&
+                                    !selectedSize) ||
+                                (!!selectedSize &&
+                                    !!product.sizeStocks?.[selectedSize] &&
+                                    product.sizeStocks[selectedSize]
+                                        .quantity === 0)
+                            }
                             className={`flex w-full items-center justify-center gap-2 rounded-lg py-4 text-lg font-semibold transition-all duration-200 focus:ring-2 focus:ring-[#771E49] focus:ring-offset-2 focus:outline-none ${
-                                isOutOfStock
+                                isOutOfStock ||
+                                (!!product.sizeStocks &&
+                                    Object.keys(product.sizeStocks).length >
+                                        0 &&
+                                    !selectedSize) ||
+                                (!!selectedSize &&
+                                    !!product.sizeStocks?.[selectedSize] &&
+                                    product.sizeStocks[selectedSize]
+                                        .quantity === 0)
                                     ? 'cursor-not-allowed bg-gray-200 text-gray-400'
                                     : 'bg-[#771E49] text-white hover:scale-[1.02] hover:bg-[#5a1738]'
                             }`}
                             aria-label={`Add ${quantity} ${product.name} to cart`}
                         >
                             <ShoppingCart size={24} />
-                            {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                            {isOutOfStock ||
+                            (selectedSize &&
+                                product.sizeStocks?.[selectedSize]?.quantity ===
+                                    0)
+                                ? 'Out of Stock'
+                                : product.sizeStocks &&
+                                    Object.keys(product.sizeStocks).length >
+                                        0 &&
+                                    !selectedSize
+                                  ? 'Select Size'
+                                  : 'Add to Cart'}
                         </button>
                     </div>
                 </div>

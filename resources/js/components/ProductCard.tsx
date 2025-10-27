@@ -95,7 +95,7 @@ export const ProductCard = memo(
 
         return (
             <article
-                className="group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-200 focus-within:ring-2 focus-within:ring-[#771E49] hover:border-[#771E49] hover:shadow-lg"
+                className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-lg border border-gray-200 bg-white transition-all duration-200 focus-within:ring-2 focus-within:ring-[#771E49] hover:border-[#771E49] hover:shadow-lg"
                 onClick={handleQuickView}
                 role="button"
                 tabIndex={0}
@@ -154,7 +154,7 @@ export const ProductCard = memo(
                 </div>
 
                 {/* Product Info */}
-                <div className="p-4">
+                <div className="flex flex-1 flex-col p-4">
                     {/* Title */}
                     <h3 className="mb-2 line-clamp-2 text-base font-semibold text-gray-900 transition-colors group-hover:text-[#771E49]">
                         {product.name}
@@ -248,17 +248,8 @@ export const ProductCard = memo(
                         </div>
                     )}
 
-                    {/* Out of stock message for sizes */}
-                    {availableSizes.length === 0 && product.foot_numbers && (
-                        <div className="mb-2">
-                            <span className="text-xs text-red-500">
-                                No sizes currently in stock
-                            </span>
-                        </div>
-                    )}
-
                     {/* Price and Action */}
-                    <div className="mt-3 flex items-center justify-between">
+                    <div className="mt-auto flex items-center justify-between pt-3">
                         <div className="flex flex-col">
                             {product.hasActiveCampaign &&
                             product.originalPrice ? (

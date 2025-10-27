@@ -145,10 +145,17 @@ export default function ProductModal({
                 ? `/api/products/${product.id}`
                 : '/api/products';
 
-            const method = product ? 'PUT' : 'POST';
+            // Always use POST for FormData, but add _method for updates
+            const method = 'POST';
 
             // Use FormData for file upload
             const payload = new FormData();
+
+            // For updates, add the _method field to simulate PUT
+            if (product) {
+                payload.append('_method', 'PUT');
+            }
+
             payload.append('name', formData.name);
             payload.append('description', formData.description);
             payload.append('price', formData.price);
@@ -190,6 +197,14 @@ export default function ProductModal({
             }
 
             console.log('Request payload with file:', formData.imageFile);
+            console.log('Sending to:', url, 'Method:', method);
+            console.log('FormData contents:', {
+                name: formData.name,
+                price: formData.price,
+                stock: formData.stock,
+                size_stocks: payload.get('size_stocks'),
+                _method: payload.get('_method'),
+            });
 
             const response = await fetch(url, {
                 method,

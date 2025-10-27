@@ -18,7 +18,7 @@ import toast from 'react-hot-toast';
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Products',
-        href: '/products',
+        href: '/admin/products',
     },
 ];
 

@@ -102,6 +102,7 @@ const fetchProducts = async (
                 rating: Math.floor(Math.random() * 20 + 30) / 10, // Random rating since it's not in your schema
                 stock: product.stock || 0,
                 foot_numbers: product.foot_numbers, // Added missing foot_numbers field
+                sizeStocks: product.sizeStocks || {}, // Size-specific stock quantities
                 color: product.color, // Also added color field for completeness
                 gender: product.gender || 'unisex', // Added gender field
                 categories: product.category ? [product.category] : [],
@@ -222,8 +223,8 @@ function StorefrontContent() {
                     id: product.id,
                     name: product.name,
                     description: product.description,
-                    price: parseFloat(product.pivot.campaign_price),
-                    originalPrice: parseFloat(product.price),
+                    price: parseFloat(campaign.price), // Campaign discounted price
+                    originalPrice: parseFloat(product.price), // Original product price
                     image:
                         product.image_url ||
                         product.image ||
@@ -231,6 +232,7 @@ function StorefrontContent() {
                     rating: Math.floor(Math.random() * 20 + 30) / 10,
                     stock: product.stock || 0,
                     foot_numbers: product.foot_numbers,
+                    sizeStocks: product.sizeStocks || {}, // Size-specific stock quantities
                     color: product.color,
                     gender: product.gender || 'unisex',
                     categories: product.category ? [product.category] : [],
