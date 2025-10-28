@@ -137,12 +137,14 @@ export default function ProductModal({
         setIsSubmitting(true);
         setErrors({});
 
-        console.log('Submitting product:', {
-            product,
-            formData,
-            url: product ? `/api/products/${product.id}` : '/api/products',
-            method: product ? 'PUT' : 'POST',
-        });
+        console.log('=== SUBMITTING PRODUCT ===');
+        console.log('Product (edit mode):', product);
+        console.log('Form Data:', formData);
+        console.log(
+            'URL:',
+            product ? `/api/products/${product.id}` : '/api/products',
+        );
+        console.log('Method:', product ? 'PUT (via POST)' : 'POST');
 
         try {
             const url = product
@@ -168,7 +170,7 @@ export default function ProductModal({
             payload.append('color', formData.color);
             payload.append('category_id', formData.category_id.toString());
             payload.append('gender', formData.gender);
-            
+
             // Add product_id if provided
             if (formData.product_id) {
                 payload.append('product_id', formData.product_id);
@@ -177,10 +179,8 @@ export default function ProductModal({
             // Add image file if selected
             if (formData.imageFile) {
                 payload.append('image', formData.imageFile);
-            } else if (formData.image) {
-                // Fallback to image URL if no file selected
-                payload.append('image', formData.image);
             }
+            // Note: Don't append image URL string - backend will keep existing image if no new file is uploaded
 
             // Attach size-specific stocks if provided
             if (Object.keys(formData.sizeStocks).length > 0) {
@@ -238,18 +238,24 @@ export default function ProductModal({
                 const action = product ? 'updated' : 'created';
                 toast.success(`Product ${action} successfully!`);
                 onSave();
+                onClose(); // Close the modal after successful save
             } else {
-                console.error('API Error:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    data: data,
-                });
+                console.error('=== API ERROR ===');
+                console.error('Status:', response.status);
+                console.error('Status Text:', response.statusText);
+                console.error('Response Data:', data);
+                console.error('Validation Errors:', data.errors);
 
                 if (data.errors) {
                     setErrors(data.errors);
-                    toast.error(
-                        'Please fix the validation errors and try again.',
-                    );
+                    // Show more specific error messages
+                    const errorMessages = Object.entries(data.errors)
+                        .map(
+                            ([field, messages]: [string, any]) =>
+                                `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`,
+                        )
+                        .join('\n');
+                    toast.error(`Validation errors:\n${errorMessages}`);
                 } else {
                     const errorMessage =
                         data.message ||
