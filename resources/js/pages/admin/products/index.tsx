@@ -30,6 +30,7 @@ interface Category {
 
 interface Product {
     id: number;
+    product_id?: string; // Custom product ID
     name: string;
     price: number;
     description?: string;
@@ -66,6 +67,8 @@ interface Filters {
     foot_numbers?: string;
     sort_by?: string;
     sort_order?: string;
+    id?: string;
+    product_id?: string;
 }
 
 interface ProductsPageProps {
@@ -98,6 +101,10 @@ export default function Products({
     );
     const [selectedStock, setSelectedStock] = useState(filters.stock || '');
     const [selectedColor, setSelectedColor] = useState(filters.color || '');
+    const [selectedId, setSelectedId] = useState(filters.id || '');
+    const [selectedProductId, setSelectedProductId] = useState(
+        filters.product_id || '',
+    );
 
     // Modal states
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -115,8 +122,17 @@ export default function Products({
         if (selectedCategory) filterParams.category = selectedCategory;
         if (selectedStock) filterParams.stock = selectedStock;
         if (selectedColor) filterParams.color = selectedColor;
+        if (selectedId) filterParams.id = selectedId;
+        if (selectedProductId) filterParams.product_id = selectedProductId;
         return filterParams;
-    }, [searchTerm, selectedCategory, selectedStock, selectedColor]);
+    }, [
+        searchTerm,
+        selectedCategory,
+        selectedStock,
+        selectedColor,
+        selectedId,
+        selectedProductId,
+    ]);
 
     const applyFilters = useCallback(() => {
         router.get('/admin/products', getCurrentFilters(), {
@@ -139,6 +155,8 @@ export default function Products({
         setSelectedCategory('');
         setSelectedStock('');
         setSelectedColor('');
+        setSelectedId('');
+        setSelectedProductId('');
     };
 
     // CRUD Functions
@@ -259,7 +277,39 @@ export default function Products({
                         </div>
 
                         <div className="p-6">
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6">
+                                {/* Database ID Filter */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold tracking-wide text-gray-700">
+                                        Database ID
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={selectedId}
+                                        onChange={(e) =>
+                                            setSelectedId(e.target.value)
+                                        }
+                                        placeholder="Enter ID..."
+                                        className="w-full rounded-xl border-2 border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm font-medium transition-all duration-300 focus:border-rose-400 focus:bg-white focus:ring-4 focus:ring-rose-100 focus:outline-none"
+                                    />
+                                </div>
+
+                                {/* Custom Product ID Filter */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold tracking-wide text-gray-700">
+                                        Product ID
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={selectedProductId}
+                                        onChange={(e) =>
+                                            setSelectedProductId(e.target.value)
+                                        }
+                                        placeholder="Enter Product ID..."
+                                        className="w-full rounded-xl border-2 border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm font-medium transition-all duration-300 focus:border-rose-400 focus:bg-white focus:ring-4 focus:ring-rose-100 focus:outline-none"
+                                    />
+                                </div>
+
                                 {/* Search */}
                                 <div className="space-y-2">
                                     <label className="text-xs font-semibold tracking-wide text-gray-700">
@@ -383,6 +433,9 @@ export default function Products({
                                                     ID
                                                 </th>
                                                 <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
+                                                    Product ID
+                                                </th>
+                                                <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
                                                     Product
                                                 </th>
                                                 <th className="px-4 py-4 text-left text-xs font-bold tracking-wider text-gray-700 uppercase">
@@ -418,11 +471,26 @@ export default function Products({
                                                             : 'bg-gray-50/30'
                                                     }`}
                                                 >
-                                                    {/* Product ID */}
+                                                    {/* Database ID */}
                                                     <td className="px-4 py-3 whitespace-nowrap">
                                                         <div className="text-xs font-semibold text-gray-500">
                                                             #{product.id}
                                                         </div>
+                                                    </td>
+
+                                                    {/* Custom Product ID */}
+                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                        {product.product_id ? (
+                                                            <div className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
+                                                                {
+                                                                    product.product_id
+                                                                }
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-400">
+                                                                Not set
+                                                            </span>
+                                                        )}
                                                     </td>
 
                                                     {/* Product Info */}
@@ -635,9 +703,18 @@ export default function Products({
                                                             />
                                                         )}
                                                         <div className="flex-1">
-                                                            <div className="mb-1 text-xs font-semibold text-gray-500">
-                                                                ID: #
-                                                                {product.id}
+                                                            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-gray-500">
+                                                                <span>
+                                                                    ID: #
+                                                                    {product.id}
+                                                                </span>
+                                                                {product.product_id && (
+                                                                    <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">
+                                                                        {
+                                                                            product.product_id
+                                                                        }
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             <h3 className="text-lg font-bold text-gray-900">
                                                                 {product.name}
