@@ -737,6 +737,15 @@ export default function Orders({
                                                                 }
                                                             </p>
                                                         )}
+                                                        {/* Shipping indicator */}
+                                                        {order.customer_country !==
+                                                            'kosovo' && (
+                                                            <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5">
+                                                                <span className="text-[10px] font-semibold text-amber-700">
+                                                                    +4% SHIPPING
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
 
@@ -747,7 +756,7 @@ export default function Orders({
                                                             Total Amount
                                                         </p>
                                                         <p className="text-2xl font-bold text-emerald-600">
-                                                            $
+                                                            €
                                                             {formatPrice(
                                                                 order.total_amount,
                                                             )}
@@ -1010,7 +1019,7 @@ export default function Orders({
                                                 Price
                                             </label>
                                             <p className="text-sm font-medium text-gray-900">
-                                                $
+                                                €
                                                 {formatPrice(
                                                     selectedOrder.product_price,
                                                 )}
@@ -1048,10 +1057,52 @@ export default function Orders({
                                         </div>
                                         <div>
                                             <label className="text-xs font-semibold text-gray-500">
+                                                Subtotal
+                                            </label>
+                                            <p className="text-sm font-medium text-gray-900">
+                                                €
+                                                {formatPrice(
+                                                    selectedOrder.product_price *
+                                                        selectedOrder.quantity,
+                                                )}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-semibold text-gray-500">
+                                                Shipping Fee
+                                            </label>
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {selectedOrder.customer_country ===
+                                                'kosovo' ? (
+                                                    <span className="font-semibold text-green-600">
+                                                        FREE (Kosovo)
+                                                    </span>
+                                                ) : (
+                                                    <span>
+                                                        €
+                                                        {formatPrice(
+                                                            selectedOrder.total_amount -
+                                                                selectedOrder.product_price *
+                                                                    selectedOrder.quantity,
+                                                        )}{' '}
+                                                        <span className="text-xs text-gray-500">
+                                                            (
+                                                            {selectedOrder.customer_country ===
+                                                            'albania'
+                                                                ? 'Albania'
+                                                                : 'Macedonia'}{' '}
+                                                            - 4%)
+                                                        </span>
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                        <div className="border-t border-gray-200 pt-2">
+                                            <label className="text-xs font-semibold text-gray-500">
                                                 Total Amount
                                             </label>
                                             <p className="text-lg font-bold text-emerald-600">
-                                                $
+                                                €
                                                 {formatPrice(
                                                     selectedOrder.total_amount,
                                                 )}

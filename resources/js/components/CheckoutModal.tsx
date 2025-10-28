@@ -52,6 +52,23 @@ export const CheckoutModal = memo(
             return price.toFixed(2);
         };
 
+        // Calculate shipping fee based on country
+        const calculateShipping = (
+            country: string,
+            subtotal: number,
+        ): number => {
+            if (country === 'kosovo') {
+                return 0; // Free shipping for Kosovo
+            } else if (country === 'albania' || country === 'macedonia') {
+                return subtotal * 0.04; // 4% shipping fee
+            }
+            return 0;
+        };
+
+        const subtotal = product.price * quantity;
+        const shippingFee = calculateShipping(customerInfo.country, subtotal);
+        const totalAmount = subtotal + shippingFee;
+
         const availableSizes = product.foot_numbers
             ? product.foot_numbers.split(',').map((size) => size.trim())
             : ['38', '39', '40', '41', '42', '43', '44', '45'];
@@ -88,6 +105,9 @@ export const CheckoutModal = memo(
                 console.log('Product.sizeStocks:', product.sizeStocks);
                 console.log('Selected Size from Store:', sizeFromStore);
                 console.log('Quantity:', quantity);
+                console.log('Subtotal:', subtotal);
+                console.log('Shipping Fee:', shippingFee);
+                console.log('Total Amount:', totalAmount);
 
                 // Use the selected size from store
                 const productSize = sizeFromStore || 'Standard';
@@ -105,6 +125,8 @@ export const CheckoutModal = memo(
                     product_size: productSize,
                     product_color: product.color || 'As Shown',
                     quantity: Number(quantity), // Ensure it's a number
+                    total_amount: Number(totalAmount.toFixed(2)), // Total including shipping
+                    shipping_fee: Number(shippingFee.toFixed(2)), // Shipping fee
                     notes: '',
                 };
 
@@ -647,19 +669,28 @@ export const CheckoutModal = memo(
                                                         )
                                                     </span>
                                                     <span className="font-semibold text-gray-900">
-                                                        $
-                                                        {formatPrice(
-                                                            product.price *
-                                                                quantity,
-                                                        )}
+                                                        €{formatPrice(subtotal)}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between text-sm">
                                                     <span className="text-gray-600">
                                                         Shipping
+                                                        {customerInfo.country ===
+                                                            'kosovo' &&
+                                                            ' (Kosovo)'}
+                                                        {customerInfo.country ===
+                                                            'albania' &&
+                                                            ' (Albania - 4%)'}
+                                                        {customerInfo.country ===
+                                                            'macedonia' &&
+                                                            ' (Macedonia - 4%)'}
                                                     </span>
-                                                    <span className="font-semibold text-green-600">
-                                                        FREE
+                                                    <span
+                                                        className={`font-semibold ${shippingFee === 0 ? 'text-green-600' : 'text-gray-900'}`}
+                                                    >
+                                                        {shippingFee === 0
+                                                            ? 'FREE'
+                                                            : `€${formatPrice(shippingFee)}`}
                                                     </span>
                                                 </div>
                                                 <div className="mt-2 border-t border-gray-200 pt-2">
@@ -673,10 +704,9 @@ export const CheckoutModal = memo(
                                                                 color: '#771f48',
                                                             }}
                                                         >
-                                                            $
+                                                            €
                                                             {formatPrice(
-                                                                product.price *
-                                                                    quantity,
+                                                                totalAmount,
                                                             )}
                                                         </span>
                                                     </div>
@@ -705,13 +735,22 @@ export const CheckoutModal = memo(
                                             </div>
                                             <div className="flex-1">
                                                 <h6 className="text-sm font-bold text-gray-900">
-                                                    Free Shipping
+                                                    Shipping Information
                                                 </h6>
                                                 <p className="text-xs text-gray-600">
-                                                    We offer free delivery on
-                                                    all orders. Your product
-                                                    will be carefully packaged
-                                                    and shipped to your address.
+                                                    {customerInfo.country ===
+                                                    'kosovo'
+                                                        ? '🎉 Free shipping for Kosovo!'
+                                                        : customerInfo.country ===
+                                                            'albania'
+                                                          ? '📦 Shipping fee: 4% of subtotal (Albania)'
+                                                          : customerInfo.country ===
+                                                              'macedonia'
+                                                            ? '📦 Shipping fee: 4% of subtotal (Macedonia)'
+                                                            : 'Shipping costs vary by country.'}{' '}
+                                                    Your product will be
+                                                    carefully packaged and
+                                                    shipped to your address.
                                                 </p>
                                             </div>
                                         </div>
@@ -836,10 +875,22 @@ export const CheckoutModal = memo(
                                             </div>
                                             <div className="flex justify-between text-xs">
                                                 <span className="text-gray-600">
+                                                    Subtotal:
+                                                </span>
+                                                <span className="font-semibold">
+                                                    €{formatPrice(subtotal)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-gray-600">
                                                     Shipping:
                                                 </span>
-                                                <span className="font-semibold text-green-600">
-                                                    FREE
+                                                <span
+                                                    className={`font-semibold ${shippingFee === 0 ? 'text-green-600' : 'text-gray-900'}`}
+                                                >
+                                                    {shippingFee === 0
+                                                        ? 'FREE'
+                                                        : `€${formatPrice(shippingFee)}`}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between border-t border-gray-200 pt-1.5">
@@ -850,11 +901,7 @@ export const CheckoutModal = memo(
                                                     className="text-lg font-bold"
                                                     style={{ color: '#771f48' }}
                                                 >
-                                                    €
-                                                    {formatPrice(
-                                                        product.price *
-                                                            quantity,
-                                                    )}
+                                                    €{formatPrice(totalAmount)}
                                                 </span>
                                             </div>
                                         </div>
