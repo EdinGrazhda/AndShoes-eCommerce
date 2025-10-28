@@ -90,6 +90,8 @@ class OrderController extends Controller
             'product_size' => 'nullable|string|max:50',
             'product_color' => 'nullable|string|max:50',
             'quantity' => 'required|integer|min:1|max:100',
+            'total_amount' => 'required|numeric|min:0',
+            'shipping_fee' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:1000',
         ]);
 
@@ -105,10 +107,22 @@ class OrderController extends Controller
 
             $product = Product::with('sizeStocks')->findOrFail($request->product_id);
             
+            Log::info('Order Creation - Product Details', [
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'sizeStocks_count' => $product->sizeStocks()->count(),
+                'sizeStocks_data' => $product->sizeStocks->toArray(),
+                'requested_size' => $request->product_size,
+                'requested_quantity' => $request->quantity,
+                'shipping_fee' => $request->shipping_fee,
+                'total_amount' => $request->total_amount,
+            ]);
+            
             // Check if product has size-specific stock tracking
             if ($product->sizeStocks()->count() > 0) {
                 // Product uses per-size stock tracking
                 if (empty($request->product_size)) {
+                    Log::warning('Order Creation - Size required but not provided');
                     return response()->json([
                         'message' => 'Product size is required for this product',
                     ], 422);
@@ -121,8 +135,15 @@ class OrderController extends Controller
                     ->first();
 
                 if (!$sizeStock) {
+                    Log::warning('Order Creation - Size not found', [
+                        'requested_size' => $request->product_size,
+                        'available_sizes' => $product->sizeStocks->pluck('size')->toArray(),
+                    ]);
+                    
                     return response()->json([
                         'message' => 'Selected size is not available',
+                        'requested_size' => $request->product_size,
+                        'available_sizes' => $product->sizeStocks->pluck('size')->toArray(),
                     ], 422);
                 }
 
@@ -146,9 +167,10 @@ class OrderController extends Controller
                 $product->update(['stock_quantity' => $product->stock_quantity - $request->quantity]);
             }
             
-            // Use the price sent from frontend (which could be campaign price or regular price)
+            // Use the total amount sent from frontend (includes shipping fee)
             $productPrice = $request->product_price;
-            $totalAmount = $productPrice * $request->quantity;
+            $totalAmount = $request->total_amount;
+            $shippingFee = $request->shipping_fee;
 
             $order = Order::create([
                 'customer_full_name' => $request->customer_full_name,

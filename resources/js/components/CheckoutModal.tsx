@@ -4,10 +4,8 @@ import {
     CreditCard,
     Mail,
     MapPin,
-    Minus,
     Package,
     Phone,
-    Plus,
     Truck,
     User,
     X,
@@ -35,7 +33,7 @@ interface CustomerInfo {
 
 export const CheckoutModal = memo(
     ({ isOpen, onClose, product }: CheckoutModalProps) => {
-        const { openSuccess } = useCheckoutStore();
+        const { openSuccess, selectedSize: sizeFromStore } = useCheckoutStore();
         const { clearCart } = useCartStore();
         const [currentStep, setCurrentStep] = useState(1);
         const [isLoading, setIsLoading] = useState(false);
@@ -53,6 +51,23 @@ export const CheckoutModal = memo(
         const formatPrice = (price: number): string => {
             return price.toFixed(2);
         };
+
+        // Calculate shipping fee based on country
+        const calculateShipping = (
+            country: string,
+            subtotal: number,
+        ): number => {
+            if (country === 'kosovo') {
+                return 0; // Free shipping for Kosovo
+            } else if (country === 'albania' || country === 'macedonia') {
+                return subtotal * 0.04; // 4% shipping fee
+            }
+            return 0;
+        };
+
+        const subtotal = product.price * quantity;
+        const shippingFee = calculateShipping(customerInfo.country, subtotal);
+        const totalAmount = subtotal + shippingFee;
 
         const availableSizes = product.foot_numbers
             ? product.foot_numbers.split(',').map((size) => size.trim())
@@ -84,6 +99,39 @@ export const CheckoutModal = memo(
         const handleSubmitOrder = async () => {
             setIsLoading(true);
             try {
+                console.log('=== SUBMITTING ORDER ===');
+                console.log('Customer Info:', customerInfo);
+                console.log('Product:', product);
+                console.log('Product.sizeStocks:', product.sizeStocks);
+                console.log('Selected Size from Store:', sizeFromStore);
+                console.log('Quantity:', quantity);
+                console.log('Subtotal:', subtotal);
+                console.log('Shipping Fee:', shippingFee);
+                console.log('Total Amount:', totalAmount);
+
+                // Use the selected size from store
+                const productSize = sizeFromStore || 'Standard';
+                console.log('Using selected size:', productSize);
+
+                const orderData = {
+                    customer_full_name: customerInfo.full_name,
+                    customer_email: customerInfo.email,
+                    customer_phone: customerInfo.phone,
+                    customer_address: customerInfo.address,
+                    customer_city: customerInfo.city,
+                    customer_country: customerInfo.country,
+                    product_id: product.id,
+                    product_price: Number(product.price), // Ensure it's a number
+                    product_size: productSize,
+                    product_color: product.color || 'As Shown',
+                    quantity: Number(quantity), // Ensure it's a number
+                    total_amount: Number(totalAmount.toFixed(2)), // Total including shipping
+                    shipping_fee: Number(shippingFee.toFixed(2)), // Shipping fee
+                    notes: '',
+                };
+
+                console.log('Order Data:', orderData);
+
                 const response = await fetch('/api/orders', {
                     method: 'POST',
                     headers: {
@@ -95,26 +143,15 @@ export const CheckoutModal = memo(
                                 .querySelector('meta[name="csrf-token"]')
                                 ?.getAttribute('content') || '',
                     },
-                    body: JSON.stringify({
-                        customer_full_name: customerInfo.full_name,
-                        customer_email: customerInfo.email,
-                        customer_phone: customerInfo.phone,
-                        customer_address: customerInfo.address,
-                        customer_city: customerInfo.city,
-                        customer_country: customerInfo.country,
-                        product_id: product.id,
-                        product_price: product.price, // Send the actual price (campaign or regular)
-                        product_size:
-                            product.foot_numbers?.split(',')[0]?.trim() ||
-                            'Standard',
-                        product_color: product.color || 'As Shown',
-                        quantity: quantity,
-                        notes: '',
-                    }),
+                    body: JSON.stringify(orderData),
                 });
 
+                console.log('Response Status:', response.status);
+
+                const data = await response.json();
+                console.log('Response Data:', data);
+
                 if (response.ok) {
-                    const data = await response.json();
                     toast.success('Order placed successfully!');
                     // Clear cart after successful order
                     clearCart();
@@ -122,10 +159,30 @@ export const CheckoutModal = memo(
                     // Open success modal with order data
                     openSuccess(data.order);
                 } else {
-                    const data = await response.json();
-                    const errorMessage =
-                        data.message || 'Failed to place order';
-                    toast.error(errorMessage);
+                    console.log('=== ORDER ERROR ===');
+                    console.error('Status:', response.status);
+                    console.error('Response Data:', data);
+                    console.error('Errors:', data.errors);
+                    console.error('Message:', data.message);
+                    console.error('Requested Size:', data.requested_size);
+                    console.error(
+                        'Available Sizes from Backend:',
+                        data.available_sizes,
+                    );
+                    if (data.errors) {
+                        // Show specific validation errors
+                        const errorMessages = Object.entries(data.errors)
+                            .map(
+                                ([field, messages]: [string, any]) =>
+                                    `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`,
+                            )
+                            .join('\n');
+                        toast.error(`Validation errors:\n${errorMessages}`);
+                    } else {
+                        const errorMessage =
+                            data.message || 'Failed to place order';
+                        toast.error(errorMessage);
+                    }
                 }
             } catch (error) {
                 console.error('Error placing order:', error);
@@ -572,119 +629,88 @@ export const CheckoutModal = memo(
                                                 </div>
                                             )}
 
+                                            {/* Selected Size */}
                                             <div className="rounded-lg bg-white p-3 shadow-sm">
                                                 <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                    Stock Status
+                                                    Selected Size
                                                 </p>
-                                                <p
-                                                    className={`mt-1 text-sm font-bold capitalize ${
-                                                        product.stock ===
-                                                        'in stock'
-                                                            ? 'text-green-600'
-                                                            : product.stock ===
-                                                                'low stock'
-                                                              ? 'text-orange-600'
-                                                              : 'text-red-600'
-                                                    }`}
-                                                >
-                                                    {product.stock ||
-                                                        'In Stock'}
+                                                <p className="mt-1 text-sm font-bold text-gray-900">
+                                                    {sizeFromStore ||
+                                                        'Not selected'}
+                                                </p>
+                                            </div>
+
+                                            {/* Quantity */}
+                                            <div className="rounded-lg bg-white p-3 shadow-sm">
+                                                <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                                    Quantity
+                                                </p>
+                                                <p className="mt-1 text-sm font-bold text-gray-900">
+                                                    {quantity}{' '}
+                                                    {quantity === 1
+                                                        ? 'item'
+                                                        : 'items'}
                                                 </p>
                                             </div>
                                         </div>
 
-                                        {product.foot_numbers && (
-                                            <div className="mt-4 rounded-xl bg-white p-4 shadow-sm">
-                                                <p className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                    Available Sizes
-                                                </p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {availableSizes.map(
-                                                        (size) => (
-                                                            <span
-                                                                key={size}
-                                                                className="inline-flex items-center justify-center rounded-lg border-2 px-3 py-1.5 text-sm font-bold text-gray-700"
-                                                                style={{
-                                                                    borderColor:
-                                                                        '#771f48',
-                                                                    color: '#771f48',
-                                                                }}
-                                                            >
-                                                                {size}
-                                                            </span>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Quantity Selector */}
+                                        {/* Order Summary - Price Breakdown */}
                                         <div className="mt-4 rounded-xl bg-white p-4 shadow-sm">
                                             <p className="mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                Quantity
+                                                Order Summary
                                             </p>
-                                            <div className="flex items-center gap-3">
-                                                <button
-                                                    onClick={() =>
-                                                        setQuantity(
-                                                            Math.max(
-                                                                1,
-                                                                quantity - 1,
-                                                            ),
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">
+                                                        Subtotal ({quantity}{' '}
+                                                        {quantity === 1
+                                                            ? 'item'
+                                                            : 'items'}
                                                         )
-                                                    }
-                                                    className="flex h-10 w-10 items-center justify-center rounded-lg border-2 transition-colors hover:bg-gray-50"
-                                                    style={{
-                                                        borderColor: '#771f48',
-                                                        color: '#771f48',
-                                                    }}
-                                                    aria-label="Decrease quantity"
-                                                >
-                                                    <Minus className="h-4 w-4" />
-                                                </button>
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    max="10"
-                                                    value={quantity}
-                                                    onChange={(e) =>
-                                                        setQuantity(
-                                                            Math.min(
-                                                                10,
-                                                                Math.max(
-                                                                    1,
-                                                                    Number(
-                                                                        e.target
-                                                                            .value,
-                                                                    ),
-                                                                ),
-                                                            ),
-                                                        )
-                                                    }
-                                                    className="w-20 rounded-lg border-2 py-2 text-center text-sm font-bold focus:ring-2 focus:outline-none"
-                                                    style={{
-                                                        borderColor: '#771f48',
-                                                        color: '#771f48',
-                                                    }}
-                                                />
-                                                <button
-                                                    onClick={() =>
-                                                        setQuantity(
-                                                            Math.min(
-                                                                10,
-                                                                quantity + 1,
-                                                            ),
-                                                        )
-                                                    }
-                                                    className="flex h-10 w-10 items-center justify-center rounded-lg border-2 transition-colors hover:bg-gray-50"
-                                                    style={{
-                                                        borderColor: '#771f48',
-                                                        color: '#771f48',
-                                                    }}
-                                                    aria-label="Increase quantity"
-                                                >
-                                                    <Plus className="h-4 w-4" />
-                                                </button>
+                                                    </span>
+                                                    <span className="font-semibold text-gray-900">
+                                                        €{formatPrice(subtotal)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">
+                                                        Shipping
+                                                        {customerInfo.country ===
+                                                            'kosovo' &&
+                                                            ' (Kosovo)'}
+                                                        {customerInfo.country ===
+                                                            'albania' &&
+                                                            ' (Albania - 4%)'}
+                                                        {customerInfo.country ===
+                                                            'macedonia' &&
+                                                            ' (Macedonia - 4%)'}
+                                                    </span>
+                                                    <span
+                                                        className={`font-semibold ${shippingFee === 0 ? 'text-green-600' : 'text-gray-900'}`}
+                                                    >
+                                                        {shippingFee === 0
+                                                            ? 'FREE'
+                                                            : `€${formatPrice(shippingFee)}`}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-2 border-t border-gray-200 pt-2">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-base font-bold text-gray-900">
+                                                            Total
+                                                        </span>
+                                                        <span
+                                                            className="text-lg font-bold"
+                                                            style={{
+                                                                color: '#771f48',
+                                                            }}
+                                                        >
+                                                            €
+                                                            {formatPrice(
+                                                                totalAmount,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -709,13 +735,22 @@ export const CheckoutModal = memo(
                                             </div>
                                             <div className="flex-1">
                                                 <h6 className="text-sm font-bold text-gray-900">
-                                                    Free Shipping
+                                                    Shipping Information
                                                 </h6>
                                                 <p className="text-xs text-gray-600">
-                                                    We offer free delivery on
-                                                    all orders. Your product
-                                                    will be carefully packaged
-                                                    and shipped to your address.
+                                                    {customerInfo.country ===
+                                                    'kosovo'
+                                                        ? '🎉 Free shipping for Kosovo!'
+                                                        : customerInfo.country ===
+                                                            'albania'
+                                                          ? '📦 Shipping fee: 4% of subtotal (Albania)'
+                                                          : customerInfo.country ===
+                                                              'macedonia'
+                                                            ? '📦 Shipping fee: 4% of subtotal (Macedonia)'
+                                                            : 'Shipping costs vary by country.'}{' '}
+                                                    Your product will be
+                                                    carefully packaged and
+                                                    shipped to your address.
                                                 </p>
                                             </div>
                                         </div>
@@ -840,10 +875,22 @@ export const CheckoutModal = memo(
                                             </div>
                                             <div className="flex justify-between text-xs">
                                                 <span className="text-gray-600">
+                                                    Subtotal:
+                                                </span>
+                                                <span className="font-semibold">
+                                                    €{formatPrice(subtotal)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-gray-600">
                                                     Shipping:
                                                 </span>
-                                                <span className="font-semibold text-green-600">
-                                                    FREE
+                                                <span
+                                                    className={`font-semibold ${shippingFee === 0 ? 'text-green-600' : 'text-gray-900'}`}
+                                                >
+                                                    {shippingFee === 0
+                                                        ? 'FREE'
+                                                        : `€${formatPrice(shippingFee)}`}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between border-t border-gray-200 pt-1.5">
@@ -854,11 +901,7 @@ export const CheckoutModal = memo(
                                                     className="text-lg font-bold"
                                                     style={{ color: '#771f48' }}
                                                 >
-                                                    €
-                                                    {formatPrice(
-                                                        product.price *
-                                                            quantity,
-                                                    )}
+                                                    €{formatPrice(totalAmount)}
                                                 </span>
                                             </div>
                                         </div>
