@@ -10,6 +10,7 @@ interface Category {
 
 interface Product {
     id: number;
+    product_id?: string; // Custom product ID
     name: string;
     price: number;
     description?: string;
@@ -44,6 +45,7 @@ interface FormData {
     category_id: number | '';
     gender: 'male' | 'female' | 'unisex';
     sizeStocks: Record<string, number>; // New field for size-specific stock
+    product_id: string; // Custom product ID
 }
 
 export default function ProductModal({
@@ -65,6 +67,7 @@ export default function ProductModal({
         category_id: product?.category_id || product?.category?.id || '',
         gender: product?.gender || 'unisex',
         sizeStocks: {},
+        product_id: product?.product_id || '',
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -123,6 +126,7 @@ export default function ProductModal({
                     product?.category_id || product?.category?.id || '',
                 gender: product?.gender || 'unisex',
                 sizeStocks: initialSizeStocks,
+                product_id: product?.product_id || '',
             });
             setErrors({});
         }
@@ -133,12 +137,14 @@ export default function ProductModal({
         setIsSubmitting(true);
         setErrors({});
 
-        console.log('Submitting product:', {
-            product,
-            formData,
-            url: product ? `/api/products/${product.id}` : '/api/products',
-            method: product ? 'PUT' : 'POST',
-        });
+        console.log('=== SUBMITTING PRODUCT ===');
+        console.log('Product (edit mode):', product);
+        console.log('Form Data:', formData);
+        console.log(
+            'URL:',
+            product ? `/api/products/${product.id}` : '/api/products',
+        );
+        console.log('Method:', product ? 'PUT (via POST)' : 'POST');
 
         try {
             const url = product
@@ -165,13 +171,16 @@ export default function ProductModal({
             payload.append('category_id', formData.category_id.toString());
             payload.append('gender', formData.gender);
 
+            // Add product_id if provided
+            if (formData.product_id) {
+                payload.append('product_id', formData.product_id);
+            }
+
             // Add image file if selected
             if (formData.imageFile) {
                 payload.append('image', formData.imageFile);
-            } else if (formData.image) {
-                // Fallback to image URL if no file selected
-                payload.append('image', formData.image);
             }
+            // Note: Don't append image URL string - backend will keep existing image if no new file is uploaded
 
             // Attach size-specific stocks if provided
             if (Object.keys(formData.sizeStocks).length > 0) {
@@ -202,6 +211,7 @@ export default function ProductModal({
                 name: formData.name,
                 price: formData.price,
                 stock: formData.stock,
+                product_id: formData.product_id,
                 size_stocks: payload.get('size_stocks'),
                 _method: payload.get('_method'),
             });
@@ -228,18 +238,24 @@ export default function ProductModal({
                 const action = product ? 'updated' : 'created';
                 toast.success(`Product ${action} successfully!`);
                 onSave();
+                onClose(); // Close the modal after successful save
             } else {
-                console.error('API Error:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    data: data,
-                });
+                console.error('=== API ERROR ===');
+                console.error('Status:', response.status);
+                console.error('Status Text:', response.statusText);
+                console.error('Response Data:', data);
+                console.error('Validation Errors:', data.errors);
 
                 if (data.errors) {
                     setErrors(data.errors);
-                    toast.error(
-                        'Please fix the validation errors and try again.',
-                    );
+                    // Show more specific error messages
+                    const errorMessages = Object.entries(data.errors)
+                        .map(
+                            ([field, messages]: [string, any]) =>
+                                `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`,
+                        )
+                        .join('\n');
+                    toast.error(`Validation errors:\n${errorMessages}`);
                 } else {
                     const errorMessage =
                         data.message ||
@@ -391,6 +407,34 @@ export default function ProductModal({
                                         {errors.name[0]}
                                     </p>
                                 )}
+                            </div>
+
+                            {/* Product ID */}
+                            <div className="sm:col-span-2">
+                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                                    Product ID (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={formData.product_id}
+                                    onChange={(e) =>
+                                        handleInputChange(
+                                            'product_id',
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
+                                    placeholder="Enter custom product ID (e.g., SHOE-001)"
+                                />
+                                {errors.product_id && (
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {errors.product_id[0]}
+                                    </p>
+                                )}
+                                <p className="mt-1 text-xs text-gray-500">
+                                    A unique identifier for easy filtering and
+                                    reference
+                                </p>
                             </div>
 
                             {/* Price */}

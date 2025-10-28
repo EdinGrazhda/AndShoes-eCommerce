@@ -57,21 +57,31 @@ class DashboardController extends Controller
             ->sum('total_amount');
 
         // Low stock products (stock < 10)
-        $lowStockProducts = Product::where('stock', '<', 10)
-            ->where('stock', '>', 0)
-            ->orderBy('stock', 'asc')
-            ->get(['id', 'name', 'stock', 'price'])
+        $lowStockProducts = Product::withSum('sizeStocks', 'quantity')
+            ->get()
+            ->filter(function ($product) {
+                $totalStock = $product->size_stocks_sum_quantity ?? 0;
+                return $totalStock > 0 && $totalStock < 10;
+            })
+            ->take(10)
             ->map(function ($product) {
+                $totalStock = $product->size_stocks_sum_quantity ?? 0;
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'stock' => (int) $product->stock,
+                    'stock' => (int) $totalStock,
                     'price' => (float) $product->price,
                 ];
-            });
+            })
+            ->values();
 
         // Out of stock products
-        $outOfStockCount = Product::where('stock', 0)->count();
+        $outOfStockCount = Product::withSum('sizeStocks', 'quantity')
+            ->get()
+            ->filter(function ($product) {
+                return ($product->size_stocks_sum_quantity ?? 0) == 0;
+            })
+            ->count();
 
         // Total products
         $totalProducts = Product::count();
@@ -104,8 +114,15 @@ class DashboardController extends Controller
             ->groupBy('product_id')
             ->orderBy('total_sold', 'desc')
             ->limit(5)
-            ->with('product:id,name,price,stock')
-            ->get();
+            ->with('product:id,name,price')
+            ->get()
+            ->map(function ($order) {
+                return [
+                    'product_id' => $order->product_id,
+                    'total_sold' => (int) $order->total_sold,
+                    'product' => $order->product,
+                ];
+            });
 
         // Sales trend (last 7 days)
         $salesTrend = [];
@@ -149,6 +166,8 @@ class DashboardController extends Controller
             'top_products' => $topProducts,
             'sales_trend' => $salesTrend,
             'orders_by_status' => $ordersByStatus,
-        ]);
+        ])->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+          ->header('Pragma', 'no-cache')
+          ->header('Expires', '0');
     }
 }

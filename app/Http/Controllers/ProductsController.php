@@ -50,7 +50,7 @@ class ProductsController extends Controller
             'products' => $products,
             'categories' => $categories,
             'pagination' => $pagination,
-            'filters' => $request->only(['search', 'category', 'price_min', 'price_max', 'stock', 'color', 'foot_numbers', 'sort_by', 'sort_order'])
+            'filters' => $request->only(['search', 'category', 'price_min', 'price_max', 'stock', 'color', 'foot_numbers', 'sort_by', 'sort_order', 'id', 'product_id'])
         ]);
     }
 

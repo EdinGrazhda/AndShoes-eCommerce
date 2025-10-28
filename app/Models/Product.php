@@ -22,6 +22,7 @@ class Product extends Model implements HasMedia
         'color',
         'category_id',
         'gender',
+        'product_id',
     ];
 
     protected $casts = [
