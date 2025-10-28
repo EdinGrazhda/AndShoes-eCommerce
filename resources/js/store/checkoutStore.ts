@@ -25,9 +25,10 @@ interface Order {
 interface CheckoutState {
     isOpen: boolean;
     product: Product | null;
+    selectedSize: string | null;
     isSuccessOpen: boolean;
     successOrder: Order | null;
-    openCheckout: (product: Product) => void;
+    openCheckout: (product: Product, selectedSize?: string) => void;
     closeCheckout: () => void;
     openSuccess: (order: Order) => void;
     closeSuccess: () => void;
@@ -36,10 +37,13 @@ interface CheckoutState {
 export const useCheckoutStore = create<CheckoutState>((set) => ({
     isOpen: false,
     product: null,
+    selectedSize: null,
     isSuccessOpen: false,
     successOrder: null,
-    openCheckout: (product) => set({ isOpen: true, product }),
-    closeCheckout: () => set({ isOpen: false, product: null }),
+    openCheckout: (product, selectedSize) =>
+        set({ isOpen: true, product, selectedSize: selectedSize || null }),
+    closeCheckout: () =>
+        set({ isOpen: false, product: null, selectedSize: null }),
     openSuccess: (order) => set({ isSuccessOpen: true, successOrder: order }),
     closeSuccess: () => set({ isSuccessOpen: false, successOrder: null }),
 }));

@@ -105,10 +105,20 @@ class OrderController extends Controller
 
             $product = Product::with('sizeStocks')->findOrFail($request->product_id);
             
+            Log::info('Order Creation - Product Details', [
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'sizeStocks_count' => $product->sizeStocks()->count(),
+                'sizeStocks_data' => $product->sizeStocks->toArray(),
+                'requested_size' => $request->product_size,
+                'requested_quantity' => $request->quantity,
+            ]);
+            
             // Check if product has size-specific stock tracking
             if ($product->sizeStocks()->count() > 0) {
                 // Product uses per-size stock tracking
                 if (empty($request->product_size)) {
+                    Log::warning('Order Creation - Size required but not provided');
                     return response()->json([
                         'message' => 'Product size is required for this product',
                     ], 422);
@@ -121,8 +131,15 @@ class OrderController extends Controller
                     ->first();
 
                 if (!$sizeStock) {
+                    Log::warning('Order Creation - Size not found', [
+                        'requested_size' => $request->product_size,
+                        'available_sizes' => $product->sizeStocks->pluck('size')->toArray(),
+                    ]);
+                    
                     return response()->json([
                         'message' => 'Selected size is not available',
+                        'requested_size' => $request->product_size,
+                        'available_sizes' => $product->sizeStocks->pluck('size')->toArray(),
                     ], 422);
                 }
 

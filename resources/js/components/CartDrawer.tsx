@@ -34,8 +34,8 @@ export const CartDrawer = memo(() => {
         // Close the cart drawer
         closeCart();
 
-        // Open checkout modal with the product
-        openCheckout(firstItem.product);
+        // Open checkout modal with the product and selected size
+        openCheckout(firstItem.product, firstItem.product.selectedSize);
     };
 
     if (!isOpen) return null;
