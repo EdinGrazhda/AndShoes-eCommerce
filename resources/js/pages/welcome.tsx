@@ -50,7 +50,6 @@ const fetchProducts = async (
     page: number,
     filters: Filters,
 ): Promise<PaginatedResponse<Product>> => {
-    
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     const params = new URLSearchParams({
@@ -163,7 +162,11 @@ const fetchCategories = async (): Promise<Category[]> => {
 /**
  * Main storefront component with all optimizations
  */
-function StorefrontContent({ initialProducts, categories: ssrCategories = [], campaigns: ssrCampaigns = [] }: WelcomeProps) {
+function StorefrontContent({
+    initialProducts,
+    categories: ssrCategories = [],
+    campaigns: ssrCampaigns = [],
+}: WelcomeProps) {
     const { filters, updateFilters, clearFilters, hasActiveFilters } =
         useURLFilters();
     const [searchInput, setSearchInput] = useState(filters.search);
@@ -208,10 +211,13 @@ function StorefrontContent({ initialProducts, categories: ssrCategories = [], ca
     });
 
     // Check if we have any active filters
-    const hasFilters = filters.search || filters.categories.length > 0 || 
-                      filters.priceMin > 0 || filters.priceMax < 1000 || 
-                      (filters.gender && filters.gender.length > 0) || 
-                      filters.sortBy !== 'newest';
+    const hasFilters =
+        filters.search ||
+        filters.categories.length > 0 ||
+        filters.priceMin > 0 ||
+        filters.priceMax < 1000 ||
+        (filters.gender && filters.gender.length > 0) ||
+        filters.sortBy !== 'newest';
 
     // Fetch products with infinite scroll - use SSR data for initial page
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
@@ -226,32 +232,53 @@ function StorefrontContent({ initialProducts, categories: ssrCategories = [], ca
             staleTime: 30000, // 30 seconds
             gcTime: 300000, // 5 minutes
             // Use SSR data only if no filters are applied and we have initial data
-            initialData: !hasFilters && initialProducts ? {
-                pages: [{
-                    data: initialProducts.data.map((product: any) => ({
-                        id: product.id,
-                        name: product.name,
-                        description: product.description,
-                        price: parseFloat(product.campaign_price || product.price),
-                        originalPrice: product.campaign_price ? parseFloat(product.price) : undefined,
-                        image: product.image_url || product.image || `https://picsum.photos/seed/${product.id}/400/400`,
-                        rating: Math.floor(Math.random() * 20 + 30) / 10,
-                        stock: product.stock_quantity || 0,
-                        foot_numbers: product.foot_numbers,
-                        sizeStocks: product.sizeStocks || {},
-                        color: product.color,
-                        gender: product.gender || 'unisex',
-                        categories: product.category ? [product.category] : [],
-                        created_at: product.created_at,
-                        hasActiveCampaign: !!product.campaign_price,
-                    })),
-                    current_page: initialProducts.current_page,
-                    last_page: initialProducts.last_page,
-                    per_page: initialProducts.per_page,
-                    total: initialProducts.total,
-                }],
-                pageParams: [1],
-            } : undefined,
+            initialData:
+                !hasFilters && initialProducts
+                    ? {
+                          pages: [
+                              {
+                                  data: initialProducts.data.map(
+                                      (product: any) => ({
+                                          id: product.id,
+                                          name: product.name,
+                                          description: product.description,
+                                          price: parseFloat(
+                                              product.campaign_price ||
+                                                  product.price,
+                                          ),
+                                          originalPrice: product.campaign_price
+                                              ? parseFloat(product.price)
+                                              : undefined,
+                                          image:
+                                              product.image_url ||
+                                              product.image ||
+                                              `https://picsum.photos/seed/${product.id}/400/400`,
+                                          rating:
+                                              Math.floor(
+                                                  Math.random() * 20 + 30,
+                                              ) / 10,
+                                          stock: product.stock_quantity || 0,
+                                          foot_numbers: product.foot_numbers,
+                                          sizeStocks: product.sizeStocks || {},
+                                          color: product.color,
+                                          gender: product.gender || 'unisex',
+                                          categories: product.category
+                                              ? [product.category]
+                                              : [],
+                                          created_at: product.created_at,
+                                          hasActiveCampaign:
+                                              !!product.campaign_price,
+                                      }),
+                                  ),
+                                  current_page: initialProducts.current_page,
+                                  last_page: initialProducts.last_page,
+                                  per_page: initialProducts.per_page,
+                                  total: initialProducts.total,
+                              },
+                          ],
+                          pageParams: [1],
+                      }
+                    : undefined,
         });
 
     const products = useMemo(() => {
@@ -397,10 +424,14 @@ const queryClient = new QueryClient({
 /**
  * Root component with React Query provider
  */
-export default function Welcome({ initialProducts, categories, campaigns }: WelcomeProps) {
+export default function Welcome({
+    initialProducts,
+    categories,
+    campaigns,
+}: WelcomeProps) {
     return (
         <QueryClientProvider client={queryClient}>
-            <StorefrontContent 
+            <StorefrontContent
                 initialProducts={initialProducts}
                 categories={categories}
                 campaigns={campaigns}
