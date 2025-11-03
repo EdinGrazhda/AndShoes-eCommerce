@@ -83,9 +83,9 @@ class WelcomeController extends Controller
         // Fetch categories for filters
         $categories = Category::select(['id', 'name', 'slug'])->get();
 
-        // Fetch active campaigns with their products for display
+        // Fetch active campaigns with their product for display
         $campaigns = Campaign::with([
-                'products' => function($query) {
+                'product' => function($query) {
                     $query->with([
                             'category:id,name,slug',
                             'sizeStocks:id,product_id,size,quantity'
