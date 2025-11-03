@@ -154,17 +154,17 @@ export const ProductCard = memo(
                 </div>
 
                 {/* Product Info */}
-                <div className="flex flex-1 flex-col p-4">
+                <div className="flex flex-1 flex-col p-2 sm:p-4">
                     {/* Title */}
-                    <h3 className="mb-2 line-clamp-2 text-base font-semibold text-gray-900 transition-colors group-hover:text-[#771E49]">
+                    <h3 className="mb-1 line-clamp-2 text-xs font-semibold text-gray-900 transition-colors group-hover:text-[#771E49] sm:mb-2 sm:text-base">
                         {product.name}
                     </h3>
 
                     {/* Gender Badge */}
                     {product.gender && (
-                        <div className="mb-2">
+                        <div className="mb-1 sm:mb-2">
                             <span
-                                className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+                                className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-medium sm:px-2 sm:py-1 sm:text-xs ${
                                     product.gender === 'male'
                                         ? 'bg-blue-100 text-blue-800'
                                         : product.gender === 'female'
@@ -183,33 +183,33 @@ export const ProductCard = memo(
 
                     {/* Rating */}
                     <div
-                        className="mb-2 flex items-center gap-1"
+                        className="mb-1 flex items-center gap-0.5 sm:mb-2 sm:gap-1"
                         aria-label={`Rating: ${product.rating} out of 5 stars`}
                     >
                         {Array.from({ length: 5 }).map((_, i) => (
                             <Star
                                 key={i}
-                                size={14}
+                                size={12}
                                 className={
                                     i < Math.floor(product.rating)
-                                        ? 'fill-[#771E49] text-[#771E49]'
-                                        : 'fill-gray-200 text-gray-200'
+                                        ? 'fill-[#771E49] text-[#771E49] sm:h-3.5 sm:w-3.5'
+                                        : 'fill-gray-200 text-gray-200 sm:h-3.5 sm:w-3.5'
                                 }
                                 aria-hidden="true"
                             />
                         ))}
-                        <span className="ml-1 text-xs text-gray-600">
+                        <span className="ml-0.5 text-[10px] text-gray-600 sm:ml-1 sm:text-xs">
                             ({product.rating.toFixed(1)})
                         </span>
                     </div>
 
                     {/* Available Sizes */}
                     {availableSizes.length > 0 && (
-                        <div className="mb-2">
-                            <p className="mb-1 text-xs text-gray-500">
+                        <div className="mb-1 sm:mb-2">
+                            <p className="mb-0.5 text-[10px] text-gray-500 sm:mb-1 sm:text-xs">
                                 Available sizes:
                             </p>
-                            <div className="flex flex-wrap gap-1">
+                            <div className="flex flex-wrap gap-0.5 sm:gap-1">
                                 {availableSizes.slice(0, 4).map((size) => {
                                     const sizeStock =
                                         product.sizeStocks?.[size] || 0;
@@ -219,7 +219,7 @@ export const ProductCard = memo(
                                     return (
                                         <span
                                             key={size}
-                                            className={`inline-block rounded border px-1.5 py-0.5 text-xs ${
+                                            className={`inline-block rounded border px-1 py-0.5 text-[9px] sm:px-1.5 sm:text-xs ${
                                                 isLowSizeStock
                                                     ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
                                                     : 'border-gray-200 bg-gray-100 text-gray-700'
@@ -232,7 +232,7 @@ export const ProductCard = memo(
                                         >
                                             {size}
                                             {isLowSizeStock && (
-                                                <span className="ml-1 text-[10px]">
+                                                <span className="ml-0.5 text-[8px] sm:ml-1 sm:text-[10px]">
                                                     ●
                                                 </span>
                                             )}
@@ -240,7 +240,7 @@ export const ProductCard = memo(
                                     );
                                 })}
                                 {availableSizes.length > 4 && (
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-[9px] text-gray-500 sm:text-xs">
                                         +{availableSizes.length - 4} more
                                     </span>
                                 )}
@@ -249,27 +249,27 @@ export const ProductCard = memo(
                     )}
 
                     {/* Price and Action */}
-                    <div className="mt-auto flex items-center justify-between pt-3">
+                    <div className="mt-auto flex items-center justify-between gap-1 pt-2 sm:gap-2 sm:pt-3">
                         <div className="flex flex-col">
                             {product.hasActiveCampaign &&
                             product.originalPrice ? (
                                 <>
-                                    <span className="text-xl font-bold text-green-600">
+                                    <span className="text-base font-bold text-green-600 sm:text-xl">
                                         €{product.price.toFixed(2)}
                                     </span>
-                                    <span className="text-sm text-gray-400 line-through">
+                                    <span className="text-xs text-gray-400 line-through sm:text-sm">
                                         €{product.originalPrice.toFixed(2)}
                                     </span>
                                     {product.campaign_name && (
-                                        <span className="text-xs font-semibold text-purple-600">
+                                        <span className="text-[10px] font-semibold text-purple-600 sm:text-xs">
                                             {product.campaign_name}
                                         </span>
                                     )}
                                     {timeRemaining && (
-                                        <div className="mt-1 flex items-center gap-1 text-xs font-medium text-gray-600">
+                                        <div className="mt-0.5 flex items-center gap-0.5 text-[10px] font-medium text-gray-600 sm:mt-1 sm:gap-1 sm:text-xs">
                                             <Clock
-                                                size={12}
-                                                className="text-purple-600"
+                                                size={10}
+                                                className="text-purple-600 sm:h-3 sm:w-3"
                                             />
                                             <span>
                                                 {timeRemaining.days > 0 &&
@@ -282,7 +282,7 @@ export const ProductCard = memo(
                                     )}
                                 </>
                             ) : (
-                                <span className="text-xl font-bold text-[#771E49]">
+                                <span className="text-base font-bold text-[#771E49] sm:text-xl">
                                     €{product.price.toFixed(2)}
                                 </span>
                             )}
@@ -290,10 +290,10 @@ export const ProductCard = memo(
 
                         <button
                             onClick={handleShowDetails}
-                            className="flex items-center gap-1.5 rounded-lg bg-[#771E49] px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-[#5a1738] focus:ring-2 focus:ring-[#771E49] focus:outline-none"
+                            className="flex items-center gap-1 rounded-lg bg-[#771E49] px-2 py-1.5 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:bg-[#5a1738] focus:ring-2 focus:ring-[#771E49] focus:outline-none sm:gap-1.5 sm:px-3 sm:py-2 sm:text-sm"
                             aria-label={`View details for ${product.name}`}
                         >
-                            <Eye size={16} />
+                            <Eye size={14} className="sm:h-4 sm:w-4" />
                             <span>Details</span>
                         </button>
                     </div>
