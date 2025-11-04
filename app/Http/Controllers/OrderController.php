@@ -5,13 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSizeStock;
+use App\Mail\OrderPlaced;
+use App\Mail\OrderNotificationAdmin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Services\ImageUrlNormalizer;
 
 class OrderController extends Controller
 {
@@ -172,6 +176,9 @@ class OrderController extends Controller
             $totalAmount = $request->total_amount;
             $shippingFee = $request->shipping_fee;
 
+            // Resolve and normalize product image (prefer medialibrary URL, then product.image)
+            $productImage = ImageUrlNormalizer::fromProduct($product);
+
             $order = Order::create([
                 'customer_full_name' => $request->customer_full_name,
                 'customer_email' => $request->customer_email,
@@ -182,7 +189,7 @@ class OrderController extends Controller
                 'product_id' => $request->product_id,
                 'product_name' => $product->name,
                 'product_price' => $productPrice,
-                'product_image' => $product->image,
+                'product_image' => $productImage,
                 'product_size' => $request->product_size,
                 'product_color' => $request->product_color,
                 'quantity' => $request->quantity,
@@ -192,6 +199,26 @@ class OrderController extends Controller
             ]);
 
             DB::commit();
+
+            // Send email notifications
+            try {
+                // Send confirmation email to customer
+                Mail::to($order->customer_email)->send(new OrderPlaced($order));
+                
+                // Send notification email to admin
+                Mail::to('and.shoes22@gmail.com')->send(new OrderNotificationAdmin($order));
+                
+                Log::info('Order emails sent successfully', [
+                    'order_id' => $order->id,
+                    'customer_email' => $order->customer_email,
+                ]);
+            } catch (\Exception $emailException) {
+                // Log email error but don't fail the order
+                Log::error('Failed to send order emails: ' . $emailException->getMessage(), [
+                    'order_id' => $order->id,
+                    'trace' => $emailException->getTraceAsString(),
+                ]);
+            }
 
             return response()->json([
                 'message' => 'Order created successfully',

@@ -41,25 +41,42 @@ export const Header = memo(
                             />
                         </div>
 
-                        {/* Search Bar */}
+                        {/* Search Bar with Decorative Circles */}
                         <div className="max-w-2xl flex-1 lg:mx-12">
-                            <div className="relative">
-                                <Search
-                                    className="absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 sm:left-3"
-                                    size={18}
-                                    aria-hidden="true"
-                                />
-                                <input
-                                    type="search"
-                                    value={searchValue}
-                                    onChange={(e) =>
-                                        onSearchChange(e.target.value)
-                                    }
-                                    placeholder="Search..."
-                                    className="w-full rounded-lg border-2 py-1.5 pr-2 pl-8 text-sm transition-all focus:border-[#771f48] focus:ring-2 focus:ring-[#771f48]/20 focus:outline-none sm:py-2 sm:pr-4 sm:pl-10 sm:text-base"
-                                    style={{ borderColor: '#771f48' }}
-                                    aria-label="Search products"
-                                />
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                {/* Left Circles */}
+                                <div className="hidden items-center gap-1 sm:flex">
+                                    <div className="h-2 w-2 rounded-full bg-[#771f48]"></div>
+                                    <div className="h-2 w-2 rounded-full bg-[#771f48]"></div>
+                                    <div className="h-2 w-2 rounded-full bg-[#771f48]"></div>
+                                </div>
+
+                                {/* Search Input */}
+                                <div className="relative flex-1">
+                                    <Search
+                                        className="absolute top-1/2 left-2 -translate-y-1/2 text-gray-400 sm:left-3"
+                                        size={18}
+                                        aria-hidden="true"
+                                    />
+                                    <input
+                                        type="search"
+                                        value={searchValue}
+                                        onChange={(e) =>
+                                            onSearchChange(e.target.value)
+                                        }
+                                        placeholder="Search..."
+                                        className="w-full rounded-lg border-2 py-1.5 pr-2 pl-8 text-sm transition-all focus:border-[#771f48] focus:ring-2 focus:ring-[#771f48]/20 focus:outline-none sm:py-2 sm:pr-4 sm:pl-10 sm:text-base"
+                                        style={{ borderColor: '#771f48' }}
+                                        aria-label="Search products"
+                                    />
+                                </div>
+
+                                {/* Right Circles */}
+                                <div className="hidden items-center gap-1 sm:flex">
+                                    <div className="h-2 w-2 rounded-full bg-[#771f48]"></div>
+                                    <div className="h-2 w-2 rounded-full bg-[#771f48]"></div>
+                                    <div className="h-2 w-2 rounded-full bg-[#771f48]"></div>
+                                </div>
                             </div>
                         </div>
 

@@ -78,4 +78,28 @@ class Order extends Model
             default => ucfirst($this->customer_country),
         };
     }
+
+    // Accessor for email compatibility (order_number)
+    public function getOrderNumberAttribute(): string
+    {
+        return $this->unique_id;
+    }
+
+    // Accessor for email compatibility (customer_name)
+    public function getCustomerNameAttribute(): string
+    {
+        return $this->customer_full_name;
+    }
+
+    // Accessor for email compatibility (size)
+    public function getSizeAttribute(): string
+    {
+        return $this->product_size ?? 'N/A';
+    }
+
+    // Accessor for email compatibility (price as total)
+    public function getPriceAttribute(): float
+    {
+        return (float) $this->total_amount;
+    }
 }
