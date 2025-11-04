@@ -9,6 +9,7 @@ import { BannerCarousel } from '../components/BannerCarousel';
 import { CartDrawer } from '../components/CartDrawer';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { FilterSidebar } from '../components/FilterSidebar';
+import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
 import { ProductGrid } from '../components/ProductGrid';
@@ -380,6 +381,9 @@ function StorefrontContent({
                     />
                 </main>
             </div>
+
+            {/* Footer */}
+            <Footer />
 
             {/* Cart Drawer */}
             <CartDrawer />
