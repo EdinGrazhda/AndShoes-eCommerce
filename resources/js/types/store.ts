@@ -5,7 +5,7 @@ export interface Product {
     price: number;
     originalPrice?: number; // Original price if product is on campaign
     image: string;
-    rating: number;
+    rating?: number; // Made optional since we're removing ratings
     stock: string; // Changed from number to string - can be 'in stock', 'low stock', 'out of stock'
     foot_numbers?: string; // Available sizes as comma-separated string
     sizeStocks?: Record<string, { quantity: number; stock_status?: string }>; // Size-specific stock with quantity and status

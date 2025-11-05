@@ -105,7 +105,6 @@ const fetchProducts = async (
                     product.image_url ||
                     product.image ||
                     `https://picsum.photos/seed/${product.id}/400/400`, // Use image_url from Media Library
-                rating: Math.floor(Math.random() * 20 + 30) / 10, // Random rating since it's not in your schema
                 stock: product.stock || 0,
                 foot_numbers: product.foot_numbers, // Added missing foot_numbers field
                 sizeStocks: product.sizeStocks || {}, // Size-specific stock quantities
@@ -254,10 +253,6 @@ function StorefrontContent({
                                               product.image_url ||
                                               product.image ||
                                               `https://picsum.photos/seed/${product.id}/400/400`,
-                                          rating:
-                                              Math.floor(
-                                                  Math.random() * 20 + 30,
-                                              ) / 10,
                                           stock: product.stock_quantity || 0,
                                           foot_numbers: product.foot_numbers,
                                           sizeStocks: product.sizeStocks || {},
@@ -298,7 +293,6 @@ function StorefrontContent({
                     campaign.product.image_url ||
                     campaign.product.image ||
                     `https://picsum.photos/seed/${campaign.product.id}/400/400`,
-                rating: Math.floor(Math.random() * 20 + 30) / 10,
                 stock: campaign.product.stock || 0,
                 foot_numbers: campaign.product.foot_numbers,
                 sizeStocks: campaign.product.sizeStocks || {}, // Size-specific stock quantities

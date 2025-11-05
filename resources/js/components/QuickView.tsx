@@ -46,7 +46,7 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
             // Check if requested quantity is available
             if (quantity > sizeStock.quantity) {
                 toast.error(
-                    `Only ${sizeStock.quantity} available for size ${selectedSize}`,
+                    `Not enough stock available for size ${selectedSize}`,
                 );
                 return;
             }
@@ -75,9 +75,8 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
         if (product.sizeStocks && Object.keys(product.sizeStocks).length > 0) {
             return Object.entries(product.sizeStocks)
                 .filter(([_, stockInfo]) => stockInfo.quantity > 0) // Only show sizes with stock > 0
-                .map(([size, stockInfo]) => ({
+                .map(([size, _]) => ({
                     size,
-                    stock: stockInfo.quantity,
                     available: true, // All returned sizes are available
                 }))
                 .sort((a, b) => {
@@ -146,32 +145,35 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                         </h3>
 
                         {/* Rating */}
-                        <div
-                            className="mb-4 flex items-center gap-2"
-                            aria-label={`Rating: ${product.rating} out of 5 stars`}
-                        >
-                            <div className="flex gap-1">
-                                {Array.from({ length: 5 }).map((_, i) => (
-                                    <Star
-                                        key={i}
-                                        size={20}
-                                        className={
-                                            i < Math.floor(product.rating)
-                                                ? 'fill-[#771E49] text-[#771E49]'
-                                                : 'fill-gray-200 text-gray-200'
-                                        }
-                                        aria-hidden="true"
-                                    />
-                                ))}
+                        {product.rating && (
+                            <div
+                                className="mb-4 flex items-center gap-2"
+                                aria-label={`Rating: ${product.rating} out of 5 stars`}
+                            >
+                                <div className="flex gap-1">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                        <Star
+                                            key={i}
+                                            size={20}
+                                            className={
+                                                i <
+                                                Math.floor(product.rating || 0)
+                                                    ? 'fill-[#771E49] text-[#771E49]'
+                                                    : 'fill-gray-200 text-gray-200'
+                                            }
+                                            aria-hidden="true"
+                                        />
+                                    ))}
+                                </div>
+                                <span className="text-gray-600">
+                                    ({product.rating.toFixed(1)})
+                                </span>
                             </div>
-                            <span className="text-gray-600">
-                                ({product.rating.toFixed(1)})
-                            </span>
-                        </div>
+                        )}
 
                         {/* Price */}
                         <div className="mb-6 text-4xl font-bold text-[#771E49]">
-                            €{product.price.toFixed(2)}
+                            €{(product.price || 0).toFixed(2)}
                         </div>
 
                         {/* Description */}
@@ -244,39 +246,12 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                             <span className="text-sm font-medium">
                                                 {sizeItem.size}
                                             </span>
-                                            <span
-                                                className={`mt-0.5 block text-xs ${
-                                                    selectedSize ===
-                                                    sizeItem.size
-                                                        ? 'text-white/90'
-                                                        : sizeItem.stock <= 5
-                                                          ? 'text-orange-600'
-                                                          : 'text-gray-600'
-                                                }`}
-                                            >
-                                                {sizeItem.stock} in stock
-                                            </span>
                                         </button>
                                     ))}
                                 </div>
                                 {selectedSize && (
                                     <p className="mt-2 text-sm text-[#771E49]">
                                         Selected size: EU {selectedSize}
-                                        {sizeInfo.find(
-                                            (s) => s.size === selectedSize,
-                                        )?.stock && (
-                                            <span className="ml-2 text-gray-600">
-                                                (
-                                                {
-                                                    sizeInfo.find(
-                                                        (s) =>
-                                                            s.size ===
-                                                            selectedSize,
-                                                    )?.stock
-                                                }{' '}
-                                                available)
-                                            </span>
-                                        )}
                                     </p>
                                 )}
                                 {product.sizeStocks &&
@@ -306,7 +281,7 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                                 Math.max(1, q - 1),
                                             )
                                         }
-                                        className="rounded-lg border border-gray-300 p-2 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#771E49] focus:outline-none"
+                                        className="rounded-lg border border-gray-300 p-2 text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#771E49] focus:outline-none"
                                         aria-label="Decrease quantity"
                                     >
                                         <Minus size={20} />
@@ -338,7 +313,7 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                             )
                                         }
                                         disabled={quantity >= maxQuantity}
-                                        className="rounded-lg border border-gray-300 p-2 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#771E49] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="rounded-lg border border-gray-300 p-2 text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#771E49] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                                         aria-label="Increase quantity"
                                     >
                                         <Plus size={20} />
