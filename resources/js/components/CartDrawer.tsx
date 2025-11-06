@@ -117,7 +117,10 @@ export const CartDrawer = memo(() => {
                                             {item.product.name}
                                         </h3>
                                         <p className="mt-1 font-bold text-[#771E49]">
-                                            €{item.product.price.toFixed(2)}
+                                            €
+                                            {(item.product.price || 0).toFixed(
+                                                2,
+                                            )}
                                         </p>
 
                                         {/* Quantity Controls */}

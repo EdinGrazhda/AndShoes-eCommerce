@@ -9,6 +9,7 @@ import { BannerCarousel } from '../components/BannerCarousel';
 import { CartDrawer } from '../components/CartDrawer';
 import { CheckoutModal } from '../components/CheckoutModal';
 import { FilterSidebar } from '../components/FilterSidebar';
+import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
 import { ProductGrid } from '../components/ProductGrid';
@@ -50,7 +51,6 @@ const fetchProducts = async (
     page: number,
     filters: Filters,
 ): Promise<PaginatedResponse<Product>> => {
-    
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     const params = new URLSearchParams({
@@ -105,7 +105,6 @@ const fetchProducts = async (
                     product.image_url ||
                     product.image ||
                     `https://picsum.photos/seed/${product.id}/400/400`, // Use image_url from Media Library
-                rating: Math.floor(Math.random() * 20 + 30) / 10, // Random rating since it's not in your schema
                 stock: product.stock || 0,
                 foot_numbers: product.foot_numbers, // Added missing foot_numbers field
                 sizeStocks: product.sizeStocks || {}, // Size-specific stock quantities
@@ -163,7 +162,11 @@ const fetchCategories = async (): Promise<Category[]> => {
 /**
  * Main storefront component with all optimizations
  */
-function StorefrontContent({ initialProducts, categories: ssrCategories = [], campaigns: ssrCampaigns = [] }: WelcomeProps) {
+function StorefrontContent({
+    initialProducts,
+    categories: ssrCategories = [],
+    campaigns: ssrCampaigns = [],
+}: WelcomeProps) {
     const { filters, updateFilters, clearFilters, hasActiveFilters } =
         useURLFilters();
     const [searchInput, setSearchInput] = useState(filters.search);
@@ -208,10 +211,13 @@ function StorefrontContent({ initialProducts, categories: ssrCategories = [], ca
     });
 
     // Check if we have any active filters
-    const hasFilters = filters.search || filters.categories.length > 0 || 
-                      filters.priceMin > 0 || filters.priceMax < 1000 || 
-                      (filters.gender && filters.gender.length > 0) || 
-                      filters.sortBy !== 'newest';
+    const hasFilters =
+        filters.search ||
+        filters.categories.length > 0 ||
+        filters.priceMin > 0 ||
+        filters.priceMax < 1000 ||
+        (filters.gender && filters.gender.length > 0) ||
+        filters.sortBy !== 'newest';
 
     // Fetch products with infinite scroll - use SSR data for initial page
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
@@ -226,64 +232,81 @@ function StorefrontContent({ initialProducts, categories: ssrCategories = [], ca
             staleTime: 30000, // 30 seconds
             gcTime: 300000, // 5 minutes
             // Use SSR data only if no filters are applied and we have initial data
-            initialData: !hasFilters && initialProducts ? {
-                pages: [{
-                    data: initialProducts.data.map((product: any) => ({
-                        id: product.id,
-                        name: product.name,
-                        description: product.description,
-                        price: parseFloat(product.campaign_price || product.price),
-                        originalPrice: product.campaign_price ? parseFloat(product.price) : undefined,
-                        image: product.image_url || product.image || `https://picsum.photos/seed/${product.id}/400/400`,
-                        rating: Math.floor(Math.random() * 20 + 30) / 10,
-                        stock: product.stock_quantity || 0,
-                        foot_numbers: product.foot_numbers,
-                        sizeStocks: product.sizeStocks || {},
-                        color: product.color,
-                        gender: product.gender || 'unisex',
-                        categories: product.category ? [product.category] : [],
-                        created_at: product.created_at,
-                        hasActiveCampaign: !!product.campaign_price,
-                    })),
-                    current_page: initialProducts.current_page,
-                    last_page: initialProducts.last_page,
-                    per_page: initialProducts.per_page,
-                    total: initialProducts.total,
-                }],
-                pageParams: [1],
-            } : undefined,
+            initialData:
+                !hasFilters && initialProducts
+                    ? {
+                          pages: [
+                              {
+                                  data: initialProducts.data.map(
+                                      (product: any) => ({
+                                          id: product.id,
+                                          name: product.name,
+                                          description: product.description,
+                                          price: parseFloat(
+                                              product.campaign_price ||
+                                                  product.price,
+                                          ),
+                                          originalPrice: product.campaign_price
+                                              ? parseFloat(product.price)
+                                              : undefined,
+                                          image:
+                                              product.image_url ||
+                                              product.image ||
+                                              `https://picsum.photos/seed/${product.id}/400/400`,
+                                          stock: product.stock_quantity || 0,
+                                          foot_numbers: product.foot_numbers,
+                                          sizeStocks: product.sizeStocks || {},
+                                          color: product.color,
+                                          gender: product.gender || 'unisex',
+                                          categories: product.category
+                                              ? [product.category]
+                                              : [],
+                                          created_at: product.created_at,
+                                          hasActiveCampaign:
+                                              !!product.campaign_price,
+                                      }),
+                                  ),
+                                  current_page: initialProducts.current_page,
+                                  last_page: initialProducts.last_page,
+                                  per_page: initialProducts.per_page,
+                                  total: initialProducts.total,
+                              },
+                          ],
+                          pageParams: [1],
+                      }
+                    : undefined,
         });
 
     const products = useMemo(() => {
         const regularProducts = data?.pages.flatMap((page) => page.data) ?? [];
 
         // Convert campaign products to Product type and add to the beginning
-        const campaignProducts: Product[] = campaigns.flatMap(
-            (campaign: any) =>
-                campaign.products?.map((product: any) => ({
-                    id: product.id,
-                    name: product.name,
-                    description: product.description,
-                    price: parseFloat(campaign.price), // Campaign discounted price
-                    originalPrice: parseFloat(product.price), // Original product price
-                    image:
-                        product.image_url ||
-                        product.image ||
-                        `https://picsum.photos/seed/${product.id}/400/400`, // Use image_url from Media Library
-                    rating: Math.floor(Math.random() * 20 + 30) / 10,
-                    stock: product.stock || 0,
-                    foot_numbers: product.foot_numbers,
-                    sizeStocks: product.sizeStocks || {}, // Size-specific stock quantities
-                    color: product.color,
-                    gender: product.gender || 'unisex',
-                    categories: product.category ? [product.category] : [],
-                    created_at: product.created_at,
-                    hasActiveCampaign: true,
-                    campaign_id: campaign.id,
-                    campaign_name: campaign.name,
-                    campaign_end_date: campaign.end_date,
-                })) || [],
-        );
+        const campaignProducts: Product[] = campaigns
+            .filter((campaign: any) => campaign.product) // Only include campaigns with a product
+            .map((campaign: any) => ({
+                id: campaign.product.id,
+                name: campaign.product.name,
+                description: campaign.product.description,
+                price: parseFloat(campaign.price), // Campaign discounted price
+                originalPrice: parseFloat(campaign.product.price), // Original product price
+                image:
+                    campaign.product.image_url ||
+                    campaign.product.image ||
+                    `https://picsum.photos/seed/${campaign.product.id}/400/400`,
+                stock: campaign.product.stock || 0,
+                foot_numbers: campaign.product.foot_numbers,
+                sizeStocks: campaign.product.sizeStocks || {}, // Size-specific stock quantities
+                color: campaign.product.color,
+                gender: campaign.product.gender || 'unisex',
+                categories: campaign.product.category
+                    ? [campaign.product.category]
+                    : [],
+                created_at: campaign.product.created_at,
+                hasActiveCampaign: true,
+                campaign_id: campaign.id,
+                campaign_name: campaign.name,
+                campaign_end_date: campaign.end_date,
+            }));
 
         // Remove duplicates (if a campaign product is also in regular products)
         const campaignProductIds = new Set(campaignProducts.map((p) => p.id));
@@ -353,6 +376,9 @@ function StorefrontContent({ initialProducts, categories: ssrCategories = [], ca
                 </main>
             </div>
 
+            {/* Footer */}
+            <Footer />
+
             {/* Cart Drawer */}
             <CartDrawer />
 
@@ -397,10 +423,14 @@ const queryClient = new QueryClient({
 /**
  * Root component with React Query provider
  */
-export default function Welcome({ initialProducts, categories, campaigns }: WelcomeProps) {
+export default function Welcome({
+    initialProducts,
+    categories,
+    campaigns,
+}: WelcomeProps) {
     return (
         <QueryClientProvider client={queryClient}>
-            <StorefrontContent 
+            <StorefrontContent
                 initialProducts={initialProducts}
                 categories={categories}
                 campaigns={campaigns}

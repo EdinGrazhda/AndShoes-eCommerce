@@ -1,4 +1,4 @@
-import { Clock, Eye, Star, Tag } from 'lucide-react';
+import { Clock, Eye, Tag } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import type { Product } from '../types/store';
 
@@ -9,7 +9,7 @@ interface ProductCardProps {
 
 /**
  * Optimized product card with lazy-loaded images and memoization
- * Shows image, title, price, rating, stock badge, and Add to Cart button
+ * Shows image, title, price, stock badge, and Add to Cart button
  */
 export const ProductCard = memo(
     ({ product, onQuickView }: ProductCardProps) => {
@@ -82,9 +82,14 @@ export const ProductCard = memo(
 
             // If we have size-specific stock data, filter by availability
             if (product.sizeStocks) {
-                return allSizes.filter(
-                    (size) => (product.sizeStocks![size] || 0) > 0,
-                );
+                return allSizes.filter((size) => {
+                    const sizeStockInfo = product.sizeStocks![size];
+                    const sizeStock =
+                        typeof sizeStockInfo === 'object'
+                            ? sizeStockInfo.quantity
+                            : sizeStockInfo || 0;
+                    return sizeStock > 0;
+                });
             }
 
             // Otherwise, show all sizes if product is in stock
@@ -105,7 +110,7 @@ export const ProductCard = memo(
                         handleQuickView();
                     }
                 }}
-                aria-label={`${product.name} - €${product.price.toFixed(2)}`}
+                aria-label={`${product.name} - €${(product.price || 0).toFixed(2)}`}
             >
                 {/* Image Container with Fixed Aspect Ratio */}
                 <div className="relative aspect-square overflow-hidden bg-gray-100">
@@ -133,7 +138,7 @@ export const ProductCard = memo(
                     )}
                     {isLowStock && (
                         <div className="absolute top-2 right-2 rounded bg-[#771E49] px-2 py-1 text-xs font-semibold text-white">
-                            Only {product.stock} left
+                            Low Stock
                         </div>
                     )}
 
@@ -181,28 +186,6 @@ export const ProductCard = memo(
                         </div>
                     )}
 
-                    {/* Rating */}
-                    <div
-                        className="mb-1 flex items-center gap-0.5 sm:mb-2 sm:gap-1"
-                        aria-label={`Rating: ${product.rating} out of 5 stars`}
-                    >
-                        {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                                key={i}
-                                size={12}
-                                className={
-                                    i < Math.floor(product.rating)
-                                        ? 'fill-[#771E49] text-[#771E49] sm:h-3.5 sm:w-3.5'
-                                        : 'fill-gray-200 text-gray-200 sm:h-3.5 sm:w-3.5'
-                                }
-                                aria-hidden="true"
-                            />
-                        ))}
-                        <span className="ml-0.5 text-[10px] text-gray-600 sm:ml-1 sm:text-xs">
-                            ({product.rating.toFixed(1)})
-                        </span>
-                    </div>
-
                     {/* Available Sizes */}
                     {availableSizes.length > 0 && (
                         <div className="mb-1 sm:mb-2">
@@ -211,8 +194,12 @@ export const ProductCard = memo(
                             </p>
                             <div className="flex flex-wrap gap-0.5 sm:gap-1">
                                 {availableSizes.slice(0, 4).map((size) => {
+                                    const sizeStockInfo =
+                                        product.sizeStocks?.[size];
                                     const sizeStock =
-                                        product.sizeStocks?.[size] || 0;
+                                        typeof sizeStockInfo === 'object'
+                                            ? sizeStockInfo.quantity
+                                            : sizeStockInfo || 0;
                                     const isLowSizeStock =
                                         sizeStock > 0 && sizeStock <= 3;
 
@@ -224,11 +211,7 @@ export const ProductCard = memo(
                                                     ? 'border-yellow-200 bg-yellow-50 text-yellow-700'
                                                     : 'border-gray-200 bg-gray-100 text-gray-700'
                                             }`}
-                                            title={
-                                                sizeStock > 0
-                                                    ? `${sizeStock} in stock`
-                                                    : 'In stock'
-                                            }
+                                            title="Available size"
                                         >
                                             {size}
                                             {isLowSizeStock && (
@@ -255,10 +238,13 @@ export const ProductCard = memo(
                             product.originalPrice ? (
                                 <>
                                     <span className="text-base font-bold text-green-600 sm:text-xl">
-                                        €{product.price.toFixed(2)}
+                                        €{(product.price || 0).toFixed(2)}
                                     </span>
                                     <span className="text-xs text-gray-400 line-through sm:text-sm">
-                                        €{product.originalPrice.toFixed(2)}
+                                        €
+                                        {(product.originalPrice || 0).toFixed(
+                                            2,
+                                        )}
                                     </span>
                                     {product.campaign_name && (
                                         <span className="text-[10px] font-semibold text-purple-600 sm:text-xs">
@@ -283,7 +269,7 @@ export const ProductCard = memo(
                                 </>
                             ) : (
                                 <span className="text-base font-bold text-[#771E49] sm:text-xl">
-                                    €{product.price.toFixed(2)}
+                                    €{(product.price || 0).toFixed(2)}
                                 </span>
                             )}
                         </div>

@@ -7,6 +7,7 @@ use App\Models\Product;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -56,30 +57,61 @@ class DashboardController extends Controller
         $totalRevenue = Order::where('status', '!=', 'cancelled')
             ->sum('total_amount');
 
-        // Low stock products (stock < 10)
-        $lowStockProducts = Product::withSum('sizeStocks', 'quantity')
-            ->get()
-            ->filter(function ($product) {
-                $totalStock = $product->size_stocks_sum_quantity ?? 0;
-                return $totalStock > 0 && $totalStock < 10;
+        // Low stock products (stock < 10) - Check both sizeStocks and stock_quantity
+        $allProducts = Product::with('sizeStocks')
+            ->withSum('sizeStocks', 'quantity')
+            ->get();
+
+        // Calculate total stock for each product and store in array
+        $productsWithStock = $allProducts->map(function ($product) {
+            $sizeStockTotal = $product->size_stocks_sum_quantity ?? 0;
+            $totalStock = $sizeStockTotal > 0 ? $sizeStockTotal : ($product->stock_quantity ?? 0);
+            
+            // Debug logging
+            Log::info('Product Stock Check', [
+                'id' => $product->id,
+                'name' => $product->name,
+                'size_stocks_sum' => $sizeStockTotal,
+                'stock_quantity' => $product->stock_quantity,
+                'calculated_total' => $totalStock
+            ]);
+            
+            return [
+                'product' => $product,
+                'total_stock' => $totalStock
+            ];
+        });
+
+        $lowStockProducts = $productsWithStock
+            ->filter(function ($item) {
+                $isLowStock = $item['total_stock'] > 0 && $item['total_stock'] <= 10;
+                if ($isLowStock) {
+                    Log::info('LOW STOCK PRODUCT FOUND', [
+                        'id' => $item['product']->id,
+                        'name' => $item['product']->name,
+                        'stock' => $item['total_stock']
+                    ]);
+                }
+                return $isLowStock;
             })
+            ->sortBy('total_stock')
             ->take(10)
-            ->map(function ($product) {
-                $totalStock = $product->size_stocks_sum_quantity ?? 0;
+            ->map(function ($item) {
                 return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'stock' => (int) $totalStock,
-                    'price' => (float) $product->price,
+                    'id' => $item['product']->id,
+                    'name' => $item['product']->name,
+                    'stock' => (int) $item['total_stock'],
+                    'price' => (float) $item['product']->price,
                 ];
             })
             ->values();
+        
+        Log::info('Low Stock Products Result', ['count' => $lowStockProducts->count(), 'data' => $lowStockProducts->toArray()]);
 
         // Out of stock products
-        $outOfStockCount = Product::withSum('sizeStocks', 'quantity')
-            ->get()
-            ->filter(function ($product) {
-                return ($product->size_stocks_sum_quantity ?? 0) == 0;
+        $outOfStockCount = $productsWithStock
+            ->filter(function ($item) {
+                return $item['total_stock'] == 0;
             })
             ->count();
 
