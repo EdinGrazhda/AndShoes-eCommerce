@@ -37,7 +37,10 @@ forceLightMode();
 // Watch for any attempts to add dark class and remove it
 const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (
+            mutation.type === 'attributes' &&
+            mutation.attributeName === 'class'
+        ) {
             if (document.documentElement.classList.contains('dark')) {
                 forceLightMode();
             }
@@ -47,5 +50,5 @@ const observer = new MutationObserver((mutations) => {
 
 observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ['class']
+    attributeFilter: ['class'],
 });
