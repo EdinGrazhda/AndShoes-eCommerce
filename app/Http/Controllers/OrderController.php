@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Models\ProductSizeStock;
 use App\Mail\OrderPlaced;
 use App\Mail\OrderNotificationAdmin;
+use App\Mail\OrderStatusUpdated;
+use App\Jobs\SendOrderStatusUpdateEmail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -258,21 +260,47 @@ class OrderController extends Controller
             ], 422);
         }
 
+        // Store the previous status for email notification
+        $previousStatus = $order->status;
+        $newStatus = $request->status;
+
         $updateData = [
-            'status' => $request->status,
+            'status' => $newStatus,
             'notes' => $request->notes,
         ];
 
         // Set timestamps based on status
-        if ($request->status === 'confirmed' && $order->status !== 'confirmed') {
+        if ($newStatus === 'confirmed' && $order->status !== 'confirmed') {
             $updateData['confirmed_at'] = now();
-        } elseif ($request->status === 'shipped' && $order->status !== 'shipped') {
+        } elseif ($newStatus === 'shipped' && $order->status !== 'shipped') {
             $updateData['shipped_at'] = now();
-        } elseif ($request->status === 'delivered' && $order->status !== 'delivered') {
+        } elseif ($newStatus === 'delivered' && $order->status !== 'delivered') {
             $updateData['delivered_at'] = now();
         }
 
         $order->update($updateData);
+
+        // Send email notification if status actually changed
+        if ($previousStatus !== $newStatus) {
+            try {
+                // Dispatch job to send email notification
+                SendOrderStatusUpdateEmail::dispatch($order, $previousStatus, $newStatus);
+
+                Log::info("Order status update email job dispatched", [
+                    'order_id' => $order->id,
+                    'customer_email' => $order->customer_email,
+                    'previous_status' => $previousStatus,
+                    'new_status' => $newStatus,
+                ]);
+            } catch (\Exception $e) {
+                // Log the error but don't fail the status update
+                Log::error("Failed to dispatch order status update email job", [
+                    'order_id' => $order->id,
+                    'customer_email' => $order->customer_email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
 
         return response()->json([
             'message' => 'Order updated successfully',

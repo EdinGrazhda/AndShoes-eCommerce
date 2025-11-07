@@ -60,7 +60,7 @@ export const CheckoutModal = memo(
             if (country === 'kosovo') {
                 return 0; // Free shipping for Kosovo
             } else if (country === 'albania' || country === 'macedonia') {
-                return subtotal * 0.04; // 4% shipping fee
+                return 4; // Fixed 4€ shipping fee
             }
             return 0;
         };
@@ -680,10 +680,10 @@ export const CheckoutModal = memo(
                                                             ' (Kosovo)'}
                                                         {customerInfo.country ===
                                                             'albania' &&
-                                                            ' (Albania - 4%)'}
+                                                            ' (Albania - 4€)'}
                                                         {customerInfo.country ===
                                                             'macedonia' &&
-                                                            ' (Macedonia - 4%)'}
+                                                            ' (Macedonia - 4€)'}
                                                     </span>
                                                     <span
                                                         className={`font-semibold ${shippingFee === 0 ? 'text-green-600' : 'text-gray-900'}`}
@@ -743,11 +743,11 @@ export const CheckoutModal = memo(
                                                         ? '🎉 Free shipping for Kosovo!'
                                                         : customerInfo.country ===
                                                             'albania'
-                                                          ? '📦 Shipping fee: 4% of subtotal (Albania)'
+                                                          ? '📦 Shipping fee: 4€ (Albania)'
                                                           : customerInfo.country ===
                                                               'macedonia'
-                                                            ? '📦 Shipping fee: 4% of subtotal (Macedonia)'
-                                                            : 'Shipping costs vary by country.'}{' '}
+                                                            ? '📦 Shipping fee: 4€ (Macedonia)'
+                                                            : '📦 Free shipping (Kosovo)'}{' '}
                                                     Your product will be
                                                     carefully packaged and
                                                     shipped to your address.
