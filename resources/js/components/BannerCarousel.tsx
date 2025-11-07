@@ -10,6 +10,13 @@ interface BannerSlide {
     ctaLink?: string;
 }
 
+interface ApiBanner {
+    id: number;
+    header: string;
+    description?: string;
+    image_url?: string;
+}
+
 interface BannerCarouselProps {
     slides?: BannerSlide[];
     autoPlay?: boolean;
@@ -43,18 +50,30 @@ const defaultSlides: BannerSlide[] = [
     },
 ];
 
+// Transform API banner data to carousel slide format
+const transformBannerToSlide = (banner: ApiBanner): BannerSlide => ({
+    id: banner.id,
+    image: banner.image_url || defaultSlides[0].image,
+    title: banner.header,
+    subtitle: banner.description || '',
+    cta: 'Shop Now',
+    ctaLink: '#products',
+});
+
 /**
  * Hero banner carousel with smooth transitions and auto-play
- * Features 3 slides with navigation controls and indicators
+ * Features dynamic slides from API with fallback to default slides
  */
 export const BannerCarousel = memo(
     ({
-        slides = defaultSlides,
+        slides: propSlides,
         autoPlay = true,
         autoPlayInterval = 5000,
     }: BannerCarouselProps) => {
         const [currentSlide, setCurrentSlide] = useState(0);
         const [isHovered, setIsHovered] = useState(false);
+        const [slides, setSlides] = useState<BannerSlide[]>(propSlides || []);
+        const [isLoading, setIsLoading] = useState(!propSlides);
 
         const nextSlide = useCallback(() => {
             setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -70,13 +89,102 @@ export const BannerCarousel = memo(
             setCurrentSlide(index);
         }, []);
 
+        // Fetch banners from API if not provided via props
+        useEffect(() => {
+            if (propSlides) {
+                setSlides(propSlides);
+                setIsLoading(false);
+                return;
+            }
+
+            const fetchBanners = async () => {
+                try {
+                    const response = await fetch('/api/banners/active');
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.data.length > 0) {
+                            const transformedSlides = data.data.map(
+                                transformBannerToSlide,
+                            );
+                            setSlides(transformedSlides);
+                        } else {
+                            // No banners found - show empty array instead of default slides
+                            setSlides([]);
+                        }
+                    } else {
+                        // API error - show empty array instead of default slides
+                        setSlides([]);
+                    }
+                } catch (error) {
+                    console.error('Error fetching banners:', error);
+                    // Network error - show empty array instead of default slides
+                    setSlides([]);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            fetchBanners();
+        }, [propSlides]);
+
         // Auto-play functionality
         useEffect(() => {
-            if (!autoPlay || isHovered) return;
+            if (!autoPlay || isHovered || isLoading) return;
 
             const interval = setInterval(nextSlide, autoPlayInterval);
             return () => clearInterval(interval);
-        }, [autoPlay, autoPlayInterval, nextSlide, isHovered]);
+        }, [autoPlay, autoPlayInterval, nextSlide, isHovered, isLoading]);
+
+        if (isLoading) {
+            return (
+                <div
+                    className="relative flex h-64 w-full items-center justify-center sm:h-80 lg:h-96"
+                    style={{ backgroundColor: '#761f49' }}
+                >
+                    <div className="text-center text-white">
+                        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
+                        <p className="text-sm opacity-75">Loading banners...</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // If no slides available, show empty banner section
+        if (slides.length === 0) {
+            return (
+                <div
+                    className="relative flex h-64 w-full items-center justify-center sm:h-80 lg:h-96"
+                    style={{ backgroundColor: '#761f49' }}
+                >
+                    <div className="text-center text-white opacity-75">
+                        <div className="mb-4">
+                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-white/30">
+                                <svg
+                                    className="h-8 w-8"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+                        <h2 className="mb-2 text-xl font-semibold">
+                            No Banners Available
+                        </h2>
+                        <p className="text-sm opacity-75">
+                            Banners will appear here when added by
+                            administrators
+                        </p>
+                    </div>
+                </div>
+            );
+        }
 
         return (
             <div

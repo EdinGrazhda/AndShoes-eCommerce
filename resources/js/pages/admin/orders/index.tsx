@@ -743,7 +743,7 @@ export default function Orders({
                                                             'kosovo' && (
                                                             <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5">
                                                                 <span className="text-[10px] font-semibold text-amber-700">
-                                                                    +4% SHIPPING
+                                                                    +4€ SHIPPING
                                                                 </span>
                                                             </div>
                                                         )}
@@ -1089,7 +1089,7 @@ export default function Orders({
                                                             'albania'
                                                                 ? 'Albania'
                                                                 : 'Macedonia'}{' '}
-                                                            +4%)
+                                                            +4€)
                                                         </span>
                                                     </span>
                                                 )}

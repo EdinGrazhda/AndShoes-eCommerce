@@ -16,6 +16,7 @@ import { Link } from '@inertiajs/react';
 import {
     BookOpen,
     Folder,
+    Image,
     LayoutGrid,
     Package,
     ShoppingCart,
@@ -48,6 +49,11 @@ const mainNavItems: NavItem[] = [
         title: 'Campaigns',
         href: '/admin/campaigns',
         icon: Folder,
+    },
+    {
+        title: 'Banners',
+        href: '/admin/banners',
+        icon: Image,
     },
 ];
 

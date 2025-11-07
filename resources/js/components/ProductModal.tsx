@@ -698,7 +698,7 @@ export default function ProductModal({
                                                         : 'Choose image file'}
                                                 </p>
                                                 <p className="text-xs text-gray-500">
-                                                    PNG, JPG, GIF up to 2MB
+                                                    PNG, JPG, GIF up to 4MB
                                                 </p>
                                             </div>
                                             <input
@@ -709,6 +709,38 @@ export default function ProductModal({
                                                     const file =
                                                         e.target.files?.[0];
                                                     if (file) {
+                                                        // Validate file size (4MB = 4 * 1024 * 1024 bytes)
+                                                        if (
+                                                            file.size >
+                                                            4 * 1024 * 1024
+                                                        ) {
+                                                            toast.error(
+                                                                'Image size must be less than 4MB',
+                                                            );
+                                                            e.target.value = ''; // Clear the input
+                                                            return;
+                                                        }
+
+                                                        // Validate file type
+                                                        const allowedTypes = [
+                                                            'image/jpeg',
+                                                            'image/png',
+                                                            'image/jpg',
+                                                            'image/gif',
+                                                            'image/webp',
+                                                        ];
+                                                        if (
+                                                            !allowedTypes.includes(
+                                                                file.type,
+                                                            )
+                                                        ) {
+                                                            toast.error(
+                                                                'Please select a valid image file (JPEG, PNG, JPG, GIF, WebP)',
+                                                            );
+                                                            e.target.value = ''; // Clear the input
+                                                            return;
+                                                        }
+
                                                         setFormData((prev) => ({
                                                             ...prev,
                                                             imageFile: file,
