@@ -25,8 +25,6 @@ interface Banner {
     header: string;
     description?: string;
     image_url?: string;
-    thumbnail_url?: string;
-    large_image_url?: string;
     has_image: boolean;
     created_at: string;
     updated_at: string;
@@ -300,15 +298,15 @@ export default function Banners({
                                                         <div className="flex items-center gap-4">
                                                             <div className="relative h-16 w-24 overflow-hidden rounded-lg bg-gray-100">
                                                                 {banner.has_image &&
-                                                                banner.thumbnail_url ? (
+                                                                banner.image_url ? (
                                                                     <img
-                                                                        key={`banner-${banner.id}-${banner.thumbnail_url}`}
+                                                                        key={`banner-${banner.id}-${banner.image_url}`}
                                                                         src={
-                                                                            banner.thumbnail_url
+                                                                            banner.image_url
                                                                         }
                                                                         alt={
                                                                             banner.header ||
-                                                                            'Banner thumbnail'
+                                                                            'Banner image'
                                                                         }
                                                                         className="h-full w-full object-cover"
                                                                         loading="lazy"

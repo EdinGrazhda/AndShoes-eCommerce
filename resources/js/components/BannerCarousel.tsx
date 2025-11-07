@@ -15,7 +15,6 @@ interface ApiBanner {
     header: string;
     description?: string;
     image_url?: string;
-    large_image_url?: string;
 }
 
 interface BannerCarouselProps {
@@ -54,7 +53,7 @@ const defaultSlides: BannerSlide[] = [
 // Transform API banner data to carousel slide format
 const transformBannerToSlide = (banner: ApiBanner): BannerSlide => ({
     id: banner.id,
-    image: banner.large_image_url || banner.image_url || defaultSlides[0].image,
+    image: banner.image_url || defaultSlides[0].image,
     title: banner.header,
     subtitle: banner.description || '',
     cta: 'Shop Now',

@@ -43,9 +43,7 @@ class BannerController extends Controller
                 'header' => $banner->header,
                 'description' => $banner->description,
                 'image_url' => $banner->image_url,
-                'thumbnail_url' => $banner->thumbnail_url,
-                'large_image_url' => $banner->large_image_url,
-                'has_image' => $banner->hasImage(),
+                'has_image' => $banner->has_image,
                 'created_at' => $banner->created_at,
                 'updated_at' => $banner->updated_at,
             ];
@@ -88,16 +86,18 @@ class BannerController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:8192', // 8MB limit
         ]);
 
-        $banner = Banner::create([
-            'header' => $validated['header'],
-            'description' => $validated['description'] ?? null,
-        ]);
+        $imagePath = null;
 
         // Handle image upload if provided
         if ($request->hasFile('image')) {
-            $banner->addMediaFromRequest('image')
-                ->toMediaCollection('banner_images');
+            $imagePath = $request->file('image')->store('banners', 'public');
         }
+
+        $banner = Banner::create([
+            'header' => $validated['header'],
+            'description' => $validated['description'] ?? null,
+            'image_path' => $imagePath,
+        ]);
 
         return redirect()->route('admin.banners.index')
             ->with('success', 'Banner created successfully!');
@@ -114,9 +114,7 @@ class BannerController extends Controller
                 'header' => $banner->header,
                 'description' => $banner->description,
                 'image_url' => $banner->image_url,
-                'thumbnail_url' => $banner->thumbnail_url,
-                'large_image_url' => $banner->large_image_url,
-                'has_image' => $banner->hasImage(),
+                'has_image' => $banner->has_image,
                 'created_at' => $banner->created_at->format('M d, Y H:i'),
                 'updated_at' => $banner->updated_at->format('M d, Y H:i'),
             ]
@@ -134,8 +132,7 @@ class BannerController extends Controller
                 'header' => $banner->header,
                 'description' => $banner->description,
                 'image_url' => $banner->image_url,
-                'thumbnail_url' => $banner->thumbnail_url,
-                'has_image' => $banner->hasImage(),
+                'has_image' => $banner->has_image,
             ]
         ]);
     }
@@ -152,26 +149,28 @@ class BannerController extends Controller
             'remove_image' => 'boolean'
         ]);
 
-        // Update banner fields
-        $banner->update([
-            'header' => $validated['header'],
-            'description' => $validated['description'] ?? null,
-        ]);
-
         // Handle image removal
         if ($request->boolean('remove_image')) {
-            $banner->clearMediaCollection('banner_images');
+            $banner->deleteImage();
+            $banner->image_path = null;
         }
 
         // Handle new image upload
         if ($request->hasFile('image')) {
-            // Clear existing images first
-            $banner->clearMediaCollection('banner_images');
+            // Delete old image first
+            $banner->deleteImage();
             
-            // Add new image
-            $banner->addMediaFromRequest('image')
-                ->toMediaCollection('banner_images');
+            // Upload new image
+            $imagePath = $request->file('image')->store('banners', 'public');
+            $banner->image_path = $imagePath;
         }
+
+        // Update banner fields
+        $banner->update([
+            'header' => $validated['header'],
+            'description' => $validated['description'] ?? null,
+            'image_path' => $banner->image_path,
+        ]);
 
         return redirect()->route('admin.banners.index')
             ->with('success', 'Banner updated successfully!');
@@ -182,8 +181,8 @@ class BannerController extends Controller
      */
     public function destroy(Banner $banner): RedirectResponse
     {
-        // Clear all media before deleting the banner
-        $banner->clearMediaCollection('banner_images');
+        // Delete the image file before deleting the banner
+        $banner->deleteImage();
         
         $banner->delete();
 

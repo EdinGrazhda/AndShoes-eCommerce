@@ -23,9 +23,7 @@ class BannerController extends Controller
                     'header' => $banner->header,
                     'description' => $banner->description,
                     'image_url' => $banner->image_url,
-                    'thumbnail_url' => $banner->thumbnail_url,
-                    'large_image_url' => $banner->large_image_url,
-                    'has_image' => $banner->hasImage(),
+                    'has_image' => $banner->has_image,
                     'created_at' => $banner->created_at,
                     'updated_at' => $banner->updated_at,
                 ];
@@ -56,19 +54,18 @@ class BannerController extends Controller
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:8192', // 8MB limit
             ]);
 
-            $banner = Banner::create([
-                'header' => $validated['header'],
-                'description' => $validated['description'] ?? null,
-            ]);
+            $imagePath = null;
 
             // Handle image upload if provided
             if ($request->hasFile('image')) {
-                $banner->addMediaFromRequest('image')
-                    ->toMediaCollection('banner_images');
+                $imagePath = $request->file('image')->store('banners', 'public');
             }
 
-            // Refresh the model to get the media relationships
-            $banner->refresh();
+            $banner = Banner::create([
+                'header' => $validated['header'],
+                'description' => $validated['description'] ?? null,
+                'image_path' => $imagePath,
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -77,9 +74,7 @@ class BannerController extends Controller
                     'header' => $banner->header,
                     'description' => $banner->description,
                     'image_url' => $banner->image_url,
-                    'thumbnail_url' => $banner->thumbnail_url,
-                    'large_image_url' => $banner->large_image_url,
-                    'has_image' => $banner->hasImage(),
+                    'has_image' => $banner->has_image,
                     'created_at' => $banner->created_at,
                     'updated_at' => $banner->updated_at,
                 ],
@@ -114,9 +109,7 @@ class BannerController extends Controller
                     'header' => $banner->header,
                     'description' => $banner->description,
                     'image_url' => $banner->image_url,
-                    'thumbnail_url' => $banner->thumbnail_url,
-                    'large_image_url' => $banner->large_image_url,
-                    'has_image' => $banner->hasImage(),
+                    'has_image' => $banner->has_image,
                     'created_at' => $banner->created_at,
                     'updated_at' => $banner->updated_at,
                 ],
@@ -157,21 +150,19 @@ class BannerController extends Controller
 
             // Handle image removal
             if ($request->boolean('remove_image')) {
-                $banner->clearMediaCollection('banner_images');
+                $banner->deleteImage();
+                $banner->image_path = null;
             }
 
             // Handle new image upload
             if ($request->hasFile('image')) {
-                // Clear existing images first
-                $banner->clearMediaCollection('banner_images');
+                // Delete old image first
+                $banner->deleteImage();
                 
-                // Add new image
-                $banner->addMediaFromRequest('image')
-                    ->toMediaCollection('banner_images');
+                // Upload new image
+                $imagePath = $request->file('image')->store('banners', 'public');
+                $banner->image_path = $imagePath;
             }
-
-            // Refresh the model to get updated media relationships
-            $banner->refresh();
 
             return response()->json([
                 'success' => true,
@@ -180,9 +171,7 @@ class BannerController extends Controller
                     'header' => $banner->header,
                     'description' => $banner->description,
                     'image_url' => $banner->image_url,
-                    'thumbnail_url' => $banner->thumbnail_url,
-                    'large_image_url' => $banner->large_image_url,
-                    'has_image' => $banner->hasImage(),
+                    'has_image' => $banner->has_image,
                     'created_at' => $banner->created_at,
                     'updated_at' => $banner->updated_at,
                 ],
@@ -210,8 +199,8 @@ class BannerController extends Controller
         try {
             $banner = Banner::findOrFail($id);
 
-            // Clear all media before deleting the banner
-            $banner->clearMediaCollection('banner_images');
+            // Delete the image file before deleting the banner
+            $banner->deleteImage();
             
             $banner->delete();
 
@@ -233,7 +222,8 @@ class BannerController extends Controller
     public function active(): JsonResponse
     {
         try {
-            $banners = Banner::orderBy('created_at', 'desc')
+            $banners = Banner::whereNotNull('image_path')
+                ->orderBy('created_at', 'desc')
                 ->take(5) // Limit to 5 most recent banners
                 ->get()
                 ->map(function ($banner) {
@@ -242,7 +232,6 @@ class BannerController extends Controller
                         'header' => $banner->header,
                         'description' => $banner->description,
                         'image_url' => $banner->image_url,
-                        'large_image_url' => $banner->large_image_url,
                     ];
                 });
 

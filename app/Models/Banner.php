@@ -3,99 +3,50 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Illuminate\Support\Facades\Storage;
 
-class Banner extends Model implements HasMedia
+class Banner extends Model
 {
-    use InteractsWithMedia;
-
-    protected $table = 'banners'; // Fixed table name to match migration
+    protected $table = 'banners';
 
     protected $fillable = [
         'header',
         'description',
+        'image_path',
     ];
 
     protected $appends = [
         'image_url',
-        'thumbnail_url',
-        'large_image_url',
         'has_image',
     ];
-
-    /**
-     * Define media collections
-     */
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection('banner_images')
-            ->singleFile()
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp']);
-    }
-
-    /**
-     * Define media conversions
-     */
-    public function registerMediaConversions(?Media $media = null): void
-    {
-        $this->addMediaConversion('thumbnail')
-            ->width(300)
-            ->height(200)
-            ->sharpen(10)
-            ->performOnCollections('banner_images');
-
-        $this->addMediaConversion('large')
-            ->width(1200)
-            ->height(600)
-            ->sharpen(10)
-            ->performOnCollections('banner_images');
-    }
 
     /**
      * Get the banner image URL
      */
     public function getImageUrlAttribute(): ?string
     {
-        $media = $this->getFirstMedia('banner_images');
+        if (! $this->image_path) {
+            return null;
+        }
 
-        return $media ? $media->getUrl() : null;
-    }
-
-    /**
-     * Get the thumbnail image URL
-     */
-    public function getThumbnailUrlAttribute(): ?string
-    {
-        $media = $this->getFirstMedia('banner_images');
-
-        return $media ? $media->getUrl('thumbnail') : null;
-    }
-
-    /**
-     * Get the large image URL
-     */
-    public function getLargeImageUrlAttribute(): ?string
-    {
-        $media = $this->getFirstMedia('banner_images');
-
-        return $media ? $media->getUrl('large') : null;
+        return Storage::url($this->image_path);
     }
 
     /**
      * Check if banner has an image
      */
-    public function hasImage(): bool
+    public function getHasImageAttribute(): bool
     {
-        return $this->hasMedia('banner_images');
+        return ! empty($this->image_path) && Storage::exists($this->image_path);
     }
 
     /**
-     * Get the has image attribute for JSON serialization
+     * Delete the banner image file
      */
-    public function getHasImageAttribute(): bool
+    public function deleteImage(): void
     {
-        return $this->hasImage();
+        if ($this->image_path && Storage::exists($this->image_path)) {
+            Storage::delete($this->image_path);
+        }
     }
 }
