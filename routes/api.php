@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\ProductsController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\CampaignController;
+use App\Http\Controllers\API\BannerController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\DashboardController;
 
@@ -44,6 +45,16 @@ Route::prefix('campaigns')->group(function () {
     Route::get('/{id}', [CampaignController::class, 'show'])->name('api.campaigns.show');
     Route::put('/{id}', [CampaignController::class, 'update'])->name('api.campaigns.update');
     Route::delete('/{id}', [CampaignController::class, 'destroy'])->name('api.campaigns.destroy');
+});
+
+// Banners API routes
+Route::prefix('banners')->group(function () {
+    Route::get('/', [BannerController::class, 'index'])->name('api.banners.index');
+    Route::get('/active', [BannerController::class, 'active'])->name('api.banners.active');
+    Route::post('/', [BannerController::class, 'store'])->name('api.banners.store');
+    Route::get('/{id}', [BannerController::class, 'show'])->name('api.banners.show');
+    Route::put('/{id}', [BannerController::class, 'update'])->name('api.banners.update');
+    Route::delete('/{id}', [BannerController::class, 'destroy'])->name('api.banners.destroy');
 });
 
 // Orders API routes
