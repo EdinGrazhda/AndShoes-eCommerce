@@ -20,6 +20,9 @@ class Banner extends Model implements HasMedia
 
     protected $appends = [
         'image_url',
+        'thumbnail_url',
+        'large_image_url',
+        'has_image',
     ];
 
     /**
@@ -86,5 +89,13 @@ class Banner extends Model implements HasMedia
     public function hasImage(): bool
     {
         return $this->hasMedia('banner_images');
+    }
+
+    /**
+     * Get the has image attribute for JSON serialization
+     */
+    public function getHasImageAttribute(): bool
+    {
+        return $this->hasImage();
     }
 }

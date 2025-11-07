@@ -131,7 +131,10 @@ export default function Banners({
                 setShowDeleteModal(false);
                 setSelectedBanner(null);
                 toast.success('Banner deleted successfully!');
-                router.reload();
+                router.visit('/admin/banners', {
+                    preserveState: false,
+                    preserveScroll: true,
+                });
             } else {
                 const data = await response.json();
                 const errorMessage = data.message || 'Failed to delete banner';
@@ -149,7 +152,10 @@ export default function Banners({
         setShowCreateModal(false);
         setShowEditModal(false);
         setSelectedBanner(null);
-        router.reload();
+        router.visit('/admin/banners', {
+            preserveState: false,
+            preserveScroll: true,
+        });
     };
 
     const formatDate = (dateString: string) => {
@@ -296,23 +302,16 @@ export default function Banners({
                                                                 {banner.has_image &&
                                                                 banner.thumbnail_url ? (
                                                                     <img
+                                                                        key={`banner-${banner.id}-${banner.thumbnail_url}`}
                                                                         src={
                                                                             banner.thumbnail_url
                                                                         }
                                                                         alt={
-                                                                            banner.header
+                                                                            banner.header ||
+                                                                            'Banner thumbnail'
                                                                         }
                                                                         className="h-full w-full object-cover"
-                                                                        onError={(
-                                                                            e,
-                                                                        ) => {
-                                                                            console.error(
-                                                                                'Error loading thumbnail:',
-                                                                                banner.thumbnail_url,
-                                                                            );
-                                                                            e.currentTarget.style.display =
-                                                                                'none';
-                                                                        }}
+                                                                        loading="lazy"
                                                                     />
                                                                 ) : (
                                                                     <div className="flex h-full w-full items-center justify-center">
