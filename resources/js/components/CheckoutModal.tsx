@@ -10,7 +10,7 @@ import {
     User,
     X,
 } from 'lucide-react';
-import { memo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useCartStore } from '../store/cartStore';
 import { useCheckoutStore } from '../store/checkoutStore';
@@ -33,11 +33,15 @@ interface CustomerInfo {
 
 export const CheckoutModal = memo(
     ({ isOpen, onClose, product }: CheckoutModalProps) => {
-        const { openSuccess, selectedSize: sizeFromStore } = useCheckoutStore();
+        const {
+            openSuccess,
+            selectedSize: sizeFromStore,
+            quantity: quantityFromStore,
+        } = useCheckoutStore();
         const { clearCart } = useCartStore();
         const [currentStep, setCurrentStep] = useState(1);
         const [isLoading, setIsLoading] = useState(false);
-        const [quantity, setQuantity] = useState(1);
+        const [quantity, setQuantity] = useState(quantityFromStore || 1);
 
         const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
             full_name: '',
@@ -47,6 +51,13 @@ export const CheckoutModal = memo(
             city: '',
             country: '',
         });
+
+        // Sync quantity from store when modal opens or store quantity changes
+        useEffect(() => {
+            if (isOpen && quantityFromStore) {
+                setQuantity(quantityFromStore);
+            }
+        }, [isOpen, quantityFromStore]);
 
         const formatPrice = (price: number): string => {
             return price.toFixed(2);

@@ -163,6 +163,7 @@ class ProductsController extends Controller
                 'color' => 'nullable|string|max:255',
                 'category_id' => 'required|exists:categories,id',
                 'gender' => 'required|string|in:male,female,unisex',
+                'product_id' => 'nullable|string|max:255|unique:products',
             ]);
 
             if ($validator->fails()) {
@@ -185,6 +186,7 @@ class ProductsController extends Controller
                 'color' => $request->color,
                 'category_id' => $request->category_id,
                 'gender' => $request->gender,
+                'product_id' => $request->product_id ?? null,
             ]);
 
             // Handle image upload with Media Library
@@ -324,6 +326,7 @@ class ProductsController extends Controller
                 'color' => 'sometimes|nullable|string|max:255',
                 'category_id' => 'sometimes|required|exists:categories,id',
                 'gender' => 'sometimes|required|string|in:male,female,unisex',
+                'product_id' => 'sometimes|nullable|string|max:255|unique:products,product_id,'.$id,
             ]);
 
             if ($validator->fails()) {
@@ -337,7 +340,7 @@ class ProductsController extends Controller
             DB::beginTransaction();
 
             // Map stock input to stock_quantity
-            $updateData = $request->only(['name', 'description', 'price', 'foot_numbers', 'color', 'category_id', 'gender']);
+            $updateData = $request->only(['name', 'description', 'price', 'foot_numbers', 'color', 'category_id', 'gender', 'product_id']);
             if ($request->has('stock')) {
                 $updateData['stock_quantity'] = $request->stock;
             }
