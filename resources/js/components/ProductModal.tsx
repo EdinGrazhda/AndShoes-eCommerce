@@ -1,4 +1,4 @@
-import { Image as ImageIcon, Upload, X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 
@@ -38,7 +38,10 @@ interface FormData {
     description: string;
     price: string;
     image: string;
-    imageFile: File | null; // Add file field
+    imageFile: File | null; // Legacy single image file
+    imageFiles: File[]; // Multiple image files (max 4)
+    existingImages: Array<{ id: number; url: string; thumb: string }>; // Existing images from Media Library
+    deleteImageIds: number[]; // IDs of images to delete
     stock: number; // Now quantity
     foot_numbers: string;
     color: string;
@@ -61,6 +64,9 @@ export default function ProductModal({
         price: product?.price?.toString() || '',
         image: product?.image || '',
         imageFile: null,
+        imageFiles: [],
+        existingImages: (product as any)?.all_images || [],
+        deleteImageIds: [],
         stock: product?.stock_quantity ?? product?.stock ?? 0,
         foot_numbers: product?.foot_numbers || '',
         color: product?.color || '',
@@ -116,6 +122,9 @@ export default function ProductModal({
                 price: product?.price?.toString() || '',
                 image: product?.image || '',
                 imageFile: null,
+                imageFiles: [],
+                existingImages: (product as any)?.all_images || [],
+                deleteImageIds: [],
                 stock:
                     initialTotal > 0
                         ? initialTotal
@@ -176,11 +185,22 @@ export default function ProductModal({
                 payload.append('product_id', formData.product_id);
             }
 
-            // Add image file if selected
-            if (formData.imageFile) {
+            // Add multiple image files if selected
+            if (formData.imageFiles.length > 0) {
+                formData.imageFiles.forEach((file) => {
+                    payload.append('images[]', file);
+                });
+            } else if (formData.imageFile) {
+                // Legacy single image support
                 payload.append('image', formData.imageFile);
             }
-            // Note: Don't append image URL string - backend will keep existing image if no new file is uploaded
+
+            // Add IDs of images to delete
+            if (formData.deleteImageIds.length > 0) {
+                formData.deleteImageIds.forEach((id) => {
+                    payload.append('delete_images[]', id.toString());
+                });
+            }
 
             // Attach size-specific stocks if provided
             if (Object.keys(formData.sizeStocks).length > 0) {
@@ -367,26 +387,26 @@ export default function ProductModal({
                 />
 
                 {/* Modal */}
-                <div className="relative my-2 w-full max-w-xl rounded-xl bg-white shadow-2xl">
+                <div className="relative my-2 w-full max-w-2xl rounded-xl bg-white shadow-2xl">
                     {/* Header */}
-                    <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-                        <h2 className="text-lg font-bold text-gray-900">
+                    <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+                        <h2 className="text-base font-bold text-gray-900">
                             {product ? 'Edit Product' : 'Create New Product'}
                         </h2>
                         <button
                             onClick={onClose}
-                            className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                            className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
                         >
                             <X className="h-5 w-5" />
                         </button>
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="p-5">
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            {/* Name */}
-                            <div className="sm:col-span-2">
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                    <form onSubmit={handleSubmit} className="p-4">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                            {/* Name - Full Width */}
+                            <div className="sm:col-span-3">
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
                                     Product Name *
                                 </label>
                                 <input
@@ -398,21 +418,21 @@ export default function ProductModal({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
                                     placeholder="Enter product name"
                                     required
                                 />
                                 {errors.name && (
-                                    <p className="mt-1 text-xs text-red-600">
+                                    <p className="mt-0.5 text-xs text-red-600">
                                         {errors.name[0]}
                                     </p>
                                 )}
                             </div>
 
                             {/* Product ID */}
-                            <div className="sm:col-span-2">
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                                    Product ID (Optional)
+                            <div className="sm:col-span-3">
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
+                                    Product ID
                                 </label>
                                 <input
                                     type="text"
@@ -423,23 +443,52 @@ export default function ProductModal({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
-                                    placeholder="Enter custom product ID (e.g., SHOE-001)"
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
+                                    placeholder="e.g., SHOE-001"
                                 />
                                 {errors.product_id && (
-                                    <p className="mt-1 text-xs text-red-600">
+                                    <p className="mt-0.5 text-xs text-red-600">
                                         {errors.product_id[0]}
                                     </p>
                                 )}
-                                <p className="mt-1 text-xs text-gray-500">
-                                    A unique identifier for easy filtering and
-                                    reference
-                                </p>
+                            </div>
+
+                            {/* Category */}
+                            <div className="sm:col-span-3">
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
+                                    Category *
+                                </label>
+                                <select
+                                    value={formData.category_id}
+                                    onChange={(e) =>
+                                        handleInputChange(
+                                            'category_id',
+                                            parseInt(e.target.value) || '',
+                                        )
+                                    }
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
+                                    required
+                                >
+                                    <option value="">Select a category</option>
+                                    {categories.map((category) => (
+                                        <option
+                                            key={category.id}
+                                            value={category.id}
+                                        >
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.category_id && (
+                                    <p className="mt-0.5 text-xs text-red-600">
+                                        {errors.category_id[0]}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Price */}
                             <div>
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
                                     Price *
                                 </label>
                                 <div className="relative">
@@ -457,13 +506,13 @@ export default function ProductModal({
                                                 e.target.value,
                                             )
                                         }
-                                        className="w-full rounded-lg border border-gray-300 bg-gray-50 py-2 pr-3 pl-7 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
+                                        className="w-full rounded-lg border border-gray-300 bg-white py-1.5 pr-3 pl-7 text-sm transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
                                         placeholder="0.00"
                                         required
                                     />
                                 </div>
                                 {errors.price && (
-                                    <p className="mt-1 text-xs text-red-600">
+                                    <p className="mt-0.5 text-xs text-red-600">
                                         {errors.price[0]}
                                     </p>
                                 )}
@@ -471,8 +520,8 @@ export default function ProductModal({
 
                             {/* Stock Quantity */}
                             <div>
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                                    Stock Quantity *
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
+                                    Stock *
                                 </label>
                                 <input
                                     type="number"
@@ -484,16 +533,12 @@ export default function ProductModal({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
                                     placeholder="0"
                                     required
                                 />
-                                <p className="mt-1 text-xs text-gray-500">
-                                    0 = Out of Stock, 1-10 = Low Stock, 11+ = In
-                                    Stock
-                                </p>
                                 {errors.stock && (
-                                    <p className="mt-1 text-xs text-red-600">
+                                    <p className="mt-0.5 text-xs text-red-600">
                                         {errors.stock[0]}
                                     </p>
                                 )}
@@ -501,7 +546,7 @@ export default function ProductModal({
 
                             {/* Gender */}
                             <div>
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
                                     Gender *
                                 </label>
                                 <select
@@ -512,7 +557,7 @@ export default function ProductModal({
                                             e.target.value as any,
                                         )
                                     }
-                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
                                     required
                                 >
                                     <option value="unisex">Unisex</option>
@@ -520,7 +565,7 @@ export default function ProductModal({
                                     <option value="female">Female</option>
                                 </select>
                                 {errors.gender && (
-                                    <p className="mt-1 text-xs text-red-600">
+                                    <p className="mt-0.5 text-xs text-red-600">
                                         {errors.gender[0]}
                                     </p>
                                 )}
@@ -528,7 +573,7 @@ export default function ProductModal({
 
                             {/* Color */}
                             <div>
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
                                     Color
                                 </label>
                                 <input
@@ -540,19 +585,19 @@ export default function ProductModal({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
-                                    placeholder="e.g., Red, Blue, Black"
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
+                                    placeholder="e.g., Red, Blue"
                                 />
                                 {errors.color && (
-                                    <p className="mt-1 text-xs text-red-600">
+                                    <p className="mt-0.5 text-xs text-red-600">
                                         {errors.color[0]}
                                     </p>
                                 )}
                             </div>
 
                             {/* Foot Numbers */}
-                            <div>
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                            <div className="sm:col-span-2">
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
                                     Available Sizes
                                 </label>
                                 <input
@@ -564,11 +609,11 @@ export default function ProductModal({
                                             e.target.value,
                                         )
                                     }
-                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
                                     placeholder="e.g., 38, 39, 40, 41, 42"
                                 />
                                 {errors.foot_numbers && (
-                                    <p className="mt-1 text-xs text-red-600">
+                                    <p className="mt-0.5 text-xs text-red-600">
                                         {errors.foot_numbers[0]}
                                     </p>
                                 )}
@@ -576,27 +621,27 @@ export default function ProductModal({
 
                             {/* Size-Specific Stock Management */}
                             {availableSizes.length > 0 && (
-                                <div className="sm:col-span-2">
-                                    <div className="mb-2 flex items-center justify-between">
-                                        <label className="block text-sm font-semibold text-gray-700">
-                                            Stock Quantity per Size
+                                <div className="sm:col-span-3">
+                                    <div className="mb-1.5 flex items-center justify-between">
+                                        <label className="block text-xs font-semibold text-gray-700">
+                                            Stock per Size
                                         </label>
                                         <button
                                             type="button"
                                             onClick={autoPopulateSizeStocks}
-                                            className="rounded-lg border border-blue-300 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                                            className="rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
                                         >
                                             Auto-fill
                                         </button>
                                     </div>
-                                    <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-gradient-to-br from-gray-50 to-gray-100 p-3">
+                                    <div className="max-h-32 space-y-1.5 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-2">
                                         {availableSizes.map((size) => (
                                             <div
                                                 key={size}
-                                                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-2.5 shadow-sm transition-shadow hover:shadow-md"
+                                                className="flex items-center justify-between rounded border border-gray-200 bg-white p-2"
                                             >
-                                                <div className="flex flex-1 items-center gap-2.5">
-                                                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-xs font-bold text-rose-700">
+                                                <div className="flex flex-1 items-center gap-2">
+                                                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-100 text-xs font-bold text-rose-700">
                                                         {size}
                                                     </span>
                                                     <input
@@ -616,10 +661,10 @@ export default function ProductModal({
                                                                 ) || 0,
                                                             )
                                                         }
-                                                        className="w-20 rounded-lg border border-gray-300 bg-gray-50 px-2.5 py-1.5 text-sm font-medium transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
+                                                        className="w-16 rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
                                                         placeholder="0"
                                                     />
-                                                    <span className="text-xs font-medium text-gray-500">
+                                                    <span className="text-xs text-gray-500">
                                                         units
                                                     </span>
                                                 </div>
@@ -628,139 +673,25 @@ export default function ProductModal({
                                                     onClick={() =>
                                                         removeSizeStock(size)
                                                     }
-                                                    className="ml-2 rounded-lg px-2 py-1 text-lg font-bold text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                                                    className="ml-2 rounded px-1.5 py-0.5 text-base font-bold text-red-500 transition-colors hover:bg-red-50"
                                                     title={`Remove size ${size}`}
                                                 >
                                                     ×
                                                 </button>
                                             </div>
                                         ))}
-                                        {availableSizes.length === 0 && (
-                                            <p className="py-3 text-center text-sm text-gray-500">
-                                                Add sizes above to manage stock
-                                                quantities
-                                            </p>
-                                        )}
                                     </div>
-                                    <p className="mt-1.5 text-xs text-gray-500">
-                                        Set individual stock quantities for each
-                                        size. Leave empty or 0 for out of stock.
-                                    </p>
                                     {totalSizeStock > 0 && (
-                                        <div className="mt-2 rounded-lg border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-2.5">
-                                            <p className="text-xs font-semibold text-blue-800">
-                                                📦 Total Stock: {totalSizeStock}{' '}
-                                                units across all sizes
-                                            </p>
-                                        </div>
+                                        <p className="mt-1 text-xs font-medium text-blue-700">
+                                            📦 Total: {totalSizeStock} units
+                                        </p>
                                     )}
                                 </div>
                             )}
 
-                            {/* Image Upload */}
-                            <div className="sm:col-span-2">
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                                    Product Image
-                                </label>
-                                <div className="flex items-center gap-3">
-                                    {/* Preview */}
-                                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-lg border-2 border-dashed border-gray-300 bg-gray-50">
-                                        {formData.imageFile ? (
-                                            <img
-                                                src={URL.createObjectURL(
-                                                    formData.imageFile,
-                                                )}
-                                                alt="Preview"
-                                                className="h-full w-full object-cover"
-                                            />
-                                        ) : formData.image ? (
-                                            <img
-                                                src={formData.image}
-                                                alt="Current"
-                                                className="h-full w-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex h-full w-full items-center justify-center">
-                                                <ImageIcon className="h-8 w-8 text-gray-400" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* File Input */}
-                                    <div className="flex-1">
-                                        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center transition-all hover:border-rose-500 hover:bg-rose-50">
-                                            <Upload className="h-5 w-5 text-gray-400" />
-                                            <div className="text-left">
-                                                <p className="text-sm font-semibold text-gray-700">
-                                                    {formData.imageFile
-                                                        ? formData.imageFile
-                                                              .name
-                                                        : 'Choose image file'}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    PNG, JPG, GIF up to 4MB
-                                                </p>
-                                            </div>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                className="hidden"
-                                                onChange={(e) => {
-                                                    const file =
-                                                        e.target.files?.[0];
-                                                    if (file) {
-                                                        // Validate file size (4MB = 4 * 1024 * 1024 bytes)
-                                                        if (
-                                                            file.size >
-                                                            4 * 1024 * 1024
-                                                        ) {
-                                                            toast.error(
-                                                                'Image size must be less than 4MB',
-                                                            );
-                                                            e.target.value = ''; // Clear the input
-                                                            return;
-                                                        }
-
-                                                        // Validate file type
-                                                        const allowedTypes = [
-                                                            'image/jpeg',
-                                                            'image/png',
-                                                            'image/jpg',
-                                                            'image/gif',
-                                                            'image/webp',
-                                                        ];
-                                                        if (
-                                                            !allowedTypes.includes(
-                                                                file.type,
-                                                            )
-                                                        ) {
-                                                            toast.error(
-                                                                'Please select a valid image file (JPEG, PNG, JPG, GIF, WebP)',
-                                                            );
-                                                            e.target.value = ''; // Clear the input
-                                                            return;
-                                                        }
-
-                                                        setFormData((prev) => ({
-                                                            ...prev,
-                                                            imageFile: file,
-                                                        }));
-                                                    }
-                                                }}
-                                            />
-                                        </label>
-                                    </div>
-                                </div>
-                                {errors.image && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        {errors.image[0]}
-                                    </p>
-                                )}
-                            </div>
-
                             {/* Description */}
-                            <div className="sm:col-span-2">
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                            <div className="sm:col-span-3">
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
                                     Description
                                 </label>
                                 <textarea
@@ -772,63 +703,204 @@ export default function ProductModal({
                                         )
                                     }
                                     rows={2}
-                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
+                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-200 focus:outline-none"
                                     placeholder="Product description..."
                                 />
                                 {errors.description && (
-                                    <p className="mt-1 text-xs text-red-600">
+                                    <p className="mt-0.5 text-xs text-red-600">
                                         {errors.description[0]}
                                     </p>
                                 )}
                             </div>
 
-                            {/* Category */}
-                            <div className="sm:col-span-2">
-                                <label className="mb-1.5 block text-sm font-semibold text-gray-700">
-                                    Category *
+                            {/* Multiple Image Upload */}
+                            <div className="sm:col-span-3">
+                                <label className="mb-1 block text-xs font-semibold text-gray-700">
+                                    Product Images (Max 4)
                                 </label>
-                                <select
-                                    value={formData.category_id}
-                                    onChange={(e) =>
-                                        handleInputChange(
-                                            'category_id',
-                                            parseInt(e.target.value) || '',
+
+                                {/* Image Previews Grid */}
+                                <div className="grid grid-cols-4 gap-2">
+                                    {/* Existing Images */}
+                                    {formData.existingImages
+                                        .filter(
+                                            (img) =>
+                                                !formData.deleteImageIds.includes(
+                                                    img.id,
+                                                ),
                                         )
-                                    }
-                                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-colors focus:border-rose-500 focus:bg-white focus:ring-2 focus:ring-rose-200 focus:outline-none"
-                                    required
-                                >
-                                    <option value="">Select a category</option>
-                                    {categories.map((category) => (
-                                        <option
-                                            key={category.id}
-                                            value={category.id}
+                                        .map((img) => (
+                                            <div
+                                                key={img.id}
+                                                className="relative h-20 overflow-hidden rounded-lg border-2 border-gray-300 bg-gray-50"
+                                            >
+                                                <img
+                                                    src={img.thumb}
+                                                    alt="Product"
+                                                    className="h-full w-full object-cover"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData((prev) => ({
+                                                            ...prev,
+                                                            deleteImageIds: [
+                                                                ...prev.deleteImageIds,
+                                                                img.id,
+                                                            ],
+                                                        }));
+                                                    }}
+                                                    className="absolute top-0.5 right-0.5 rounded-full bg-red-500 p-0.5 text-white transition-all hover:bg-red-600"
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+
+                                    {/* New Images */}
+                                    {formData.imageFiles.map((file, index) => (
+                                        <div
+                                            key={`new-${index}`}
+                                            className="relative h-20 overflow-hidden rounded-lg border-2 border-green-400 bg-gray-50"
                                         >
-                                            {category.name}
-                                        </option>
+                                            <img
+                                                src={URL.createObjectURL(file)}
+                                                alt="Preview"
+                                                className="h-full w-full object-cover"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        imageFiles:
+                                                            prev.imageFiles.filter(
+                                                                (_, i) =>
+                                                                    i !== index,
+                                                            ),
+                                                    }));
+                                                }}
+                                                className="absolute top-0.5 right-0.5 rounded-full bg-red-500 p-0.5 text-white transition-all hover:bg-red-600"
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </button>
+                                            <span className="absolute bottom-0.5 left-0.5 rounded bg-green-500 px-1 py-0.5 text-xs font-semibold text-white">
+                                                New
+                                            </span>
+                                        </div>
                                     ))}
-                                </select>
-                                {errors.category_id && (
-                                    <p className="mt-1 text-xs text-red-600">
-                                        {errors.category_id[0]}
+
+                                    {/* Upload Button */}
+                                    {formData.existingImages.length -
+                                        formData.deleteImageIds.length +
+                                        formData.imageFiles.length <
+                                        4 && (
+                                        <label className="flex h-20 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-all hover:border-rose-500 hover:bg-rose-50">
+                                            <Upload className="h-5 w-5 text-gray-400" />
+                                            <span className="mt-0.5 text-xs font-medium text-gray-600">
+                                                Add
+                                            </span>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                multiple
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const files = Array.from(
+                                                        e.target.files || [],
+                                                    );
+                                                    const currentCount =
+                                                        formData.existingImages
+                                                            .length -
+                                                        formData.deleteImageIds
+                                                            .length +
+                                                        formData.imageFiles
+                                                            .length;
+                                                    const availableSlots =
+                                                        4 - currentCount;
+
+                                                    if (
+                                                        files.length >
+                                                        availableSlots
+                                                    ) {
+                                                        toast.error(
+                                                            `You can only add ${availableSlots} more image(s)`,
+                                                        );
+                                                        return;
+                                                    }
+
+                                                    // Validate files
+                                                    const validFiles: File[] =
+                                                        [];
+                                                    const allowedTypes = [
+                                                        'image/jpeg',
+                                                        'image/png',
+                                                        'image/jpg',
+                                                        'image/gif',
+                                                        'image/webp',
+                                                    ];
+
+                                                    for (const file of files) {
+                                                        if (
+                                                            file.size >
+                                                            4 * 1024 * 1024
+                                                        ) {
+                                                            toast.error(
+                                                                `${file.name}: Image must be less than 4MB`,
+                                                            );
+                                                            continue;
+                                                        }
+                                                        if (
+                                                            !allowedTypes.includes(
+                                                                file.type,
+                                                            )
+                                                        ) {
+                                                            toast.error(
+                                                                `${file.name}: Invalid image type`,
+                                                            );
+                                                            continue;
+                                                        }
+                                                        validFiles.push(file);
+                                                    }
+
+                                                    if (validFiles.length > 0) {
+                                                        setFormData((prev) => ({
+                                                            ...prev,
+                                                            imageFiles: [
+                                                                ...prev.imageFiles,
+                                                                ...validFiles,
+                                                            ],
+                                                        }));
+                                                    }
+
+                                                    e.target.value = '';
+                                                }}
+                                            />
+                                        </label>
+                                    )}
+                                </div>
+
+                                {errors.images && (
+                                    <p className="mt-0.5 text-xs text-red-600">
+                                        {errors.images[0]}
                                     </p>
                                 )}
                             </div>
                         </div>
 
                         {/* Actions */}
-                        <div className="mt-6 flex justify-end gap-2.5 border-t border-gray-100 pt-4">
+                        <div className="mt-4 flex justify-end gap-2 border-t border-gray-200 pt-3">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="rounded-lg border-2 border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                                className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:ring-1 focus:ring-rose-500 focus:outline-none"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="rounded-lg bg-gradient-to-r from-rose-600 to-pink-600 px-5 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:from-rose-700 hover:to-pink-700 hover:shadow-xl focus:ring-2 focus:ring-rose-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                className="rounded-lg bg-gradient-to-r from-rose-600 to-pink-600 px-4 py-1.5 text-sm font-semibold text-white shadow-md transition-all hover:from-rose-700 hover:to-pink-700 hover:shadow-lg focus:ring-1 focus:ring-rose-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isSubmitting
                                     ? 'Saving...'

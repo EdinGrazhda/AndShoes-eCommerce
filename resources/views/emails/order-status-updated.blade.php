@@ -332,9 +332,8 @@
             <p>If you have any questions, feel free to contact our customer service.</p>
             
             <div class="social-links">
-                <a href="mailto:support@andshoes.com">📧 Support</a>
-                <a href="tel:+383123456789">📞 Call Us</a>
-                <a href="https://andshoes.com">🌐 Visit Website</a>
+                <a href="mailto:info@andshoes-ks.com">📧 Support</a>
+                <a href="https://andshoes-ks.com/">🌐 Visit Website</a>
             </div>
             
             <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">

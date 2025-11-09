@@ -110,8 +110,9 @@ class ProductsController extends Controller
                     $product->campaign_end_date = $activeCampaign->end_date;
                 }
 
-                // Add media library image URL
+                // Add media library image URL and all images
                 $product->image_url = $product->image_url; // Uses accessor from model
+                $product->all_images = $product->all_images; // Get all images array
 
                 // Format sizeStocks as key-value object for frontend
                 if ($product->relationLoaded('sizeStocks') && $product->sizeStocks->count() > 0) {
@@ -157,6 +158,8 @@ class ProductsController extends Controller
                 'description' => 'nullable|string',
                 'price' => 'required|numeric|min:0|max:999999.99',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
+                'images' => 'nullable|array|max:4',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:4096',
                 'stock' => 'nullable|integer|min:0',
                 'size_stocks' => 'nullable|string',
                 'foot_numbers' => 'nullable|string|max:255',
@@ -189,8 +192,15 @@ class ProductsController extends Controller
                 'product_id' => $request->product_id ?? null,
             ]);
 
-            // Handle image upload with Media Library
-            if ($request->hasFile('image')) {
+            // Handle multiple image uploads with Media Library (max 4)
+            if ($request->hasFile('images')) {
+                $images = $request->file('images');
+                foreach (array_slice($images, 0, 4) as $image) {
+                    $product->addMedia($image)
+                        ->toMediaCollection('images');
+                }
+            } elseif ($request->hasFile('image')) {
+                // Backward compatibility with single image upload
                 $product->addMediaFromRequest('image')
                     ->toMediaCollection('images');
             }
@@ -320,6 +330,10 @@ class ProductsController extends Controller
                 'description' => 'sometimes|nullable|string',
                 'price' => 'sometimes|required|numeric|min:0|max:999999.99',
                 'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
+                'images' => 'sometimes|nullable|array|max:4',
+                'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:4096',
+                'delete_images' => 'sometimes|nullable|array',
+                'delete_images.*' => 'integer',
                 'stock' => 'sometimes|nullable|integer|min:0',
                 'size_stocks' => 'sometimes|nullable|string',
                 'foot_numbers' => 'sometimes|nullable|string|max:255',
@@ -346,13 +360,35 @@ class ProductsController extends Controller
             }
             $product->update($updateData);
 
-            // Handle image upload with Media Library
-            if ($request->hasFile('image')) {
-                // Clear old images
-                $product->clearMediaCollection('images');
-                // Add new image
-                $product->addMediaFromRequest('image')
-                    ->toMediaCollection('images');
+            // Handle image deletions
+            if ($request->has('delete_images') && is_array($request->delete_images)) {
+                foreach ($request->delete_images as $mediaId) {
+                    $media = $product->getMedia('images')->where('id', $mediaId)->first();
+                    if ($media) {
+                        $media->delete();
+                    }
+                }
+            }
+
+            // Handle multiple image uploads (max 4 total)
+            if ($request->hasFile('images')) {
+                $currentImageCount = $product->getMedia('images')->count();
+                $remainingSlots = 4 - $currentImageCount;
+
+                if ($remainingSlots > 0) {
+                    $images = $request->file('images');
+                    foreach (array_slice($images, 0, $remainingSlots) as $image) {
+                        $product->addMedia($image)
+                            ->toMediaCollection('images');
+                    }
+                }
+            } elseif ($request->hasFile('image')) {
+                // Backward compatibility with single image upload
+                $currentImageCount = $product->getMedia('images')->count();
+                if ($currentImageCount < 4) {
+                    $product->addMediaFromRequest('image')
+                        ->toMediaCollection('images');
+                }
             }
 
             // Handle size-specific stocks update

@@ -16,6 +16,7 @@ interface QuickViewProps {
 export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
     const [quantity, setQuantity] = useState(1);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const addItem = useCartStore((state) => state.addItem);
 
     const handleBackdropClick = useCallback(
@@ -128,13 +129,47 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
 
                 {/* Content */}
                 <div className="grid gap-8 p-6 md:grid-cols-2">
-                    {/* Image */}
-                    <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
-                        <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-full w-full object-cover"
-                        />
+                    {/* Image Gallery */}
+                    <div className="space-y-3">
+                        {/* Main Image */}
+                        <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
+                            <img
+                                src={
+                                    (product as any).all_images?.[
+                                        selectedImageIndex
+                                    ]?.url || product.image
+                                }
+                                alt={product.name}
+                                className="h-full w-full object-cover"
+                            />
+                        </div>
+
+                        {/* Thumbnail Gallery */}
+                        {(product as any).all_images?.length > 1 && (
+                            <div className="grid grid-cols-4 gap-2">
+                                {(product as any).all_images.map(
+                                    (img: any, index: number) => (
+                                        <button
+                                            key={img.id}
+                                            onClick={() =>
+                                                setSelectedImageIndex(index)
+                                            }
+                                            className={`aspect-square overflow-hidden rounded-lg border-2 transition-all ${
+                                                selectedImageIndex === index
+                                                    ? 'border-[#771E49] ring-2 ring-[#771E49]/20'
+                                                    : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                        >
+                                            <img
+                                                src={img.thumb}
+                                                alt={`${product.name} view ${index + 1}`}
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </button>
+                                    ),
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Details */}
@@ -180,6 +215,18 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                         <p className="mb-6 leading-relaxed text-gray-600">
                             {product.description}
                         </p>
+
+                        {/* Color */}
+                        {product.color && (
+                            <div className="mb-6">
+                                <span className="mb-2 block text-sm font-semibold text-gray-700">
+                                    Color:
+                                </span>
+                                <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900">
+                                    {product.color}
+                                </span>
+                            </div>
+                        )}
 
                         {/* Categories */}
                         {product.categories &&

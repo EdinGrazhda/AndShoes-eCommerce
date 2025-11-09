@@ -80,7 +80,7 @@ export const OrderSuccessModal = memo(
 
                 {/* Modal */}
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+                    <div className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
                         {/* Modal Header */}
                         <div
                             className="shrink-0 border-b border-gray-200 px-6 py-4"
@@ -145,9 +145,8 @@ export const OrderSuccessModal = memo(
                                 </div>
                             </div>
 
-                            {/* Order Details Cards */}
-                            <div className="mb-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
-                                {/* Customer Information */}
+                            {/* Customer Information */}
+                            <div className="mb-6">
                                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
                                     <div
                                         className="border-b border-gray-100 px-4 py-3"
@@ -164,7 +163,7 @@ export const OrderSuccessModal = memo(
                                             Delivery Information
                                         </h3>
                                     </div>
-                                    <div className="space-y-3 p-4">
+                                    <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
                                         <div className="flex items-start gap-2.5">
                                             <div
                                                 className="rounded-lg p-1.5"
@@ -202,7 +201,7 @@ export const OrderSuccessModal = memo(
                                             </div>
                                             <div className="flex-1">
                                                 <div className="text-xs font-semibold text-gray-700">
-                                                    Email
+                                                    Email Address
                                                 </div>
                                                 <div className="text-sm text-gray-900">
                                                     {order.customer_email}
@@ -224,14 +223,14 @@ export const OrderSuccessModal = memo(
                                             </div>
                                             <div className="flex-1">
                                                 <div className="text-xs font-semibold text-gray-700">
-                                                    Phone
+                                                    Phone Number
                                                 </div>
                                                 <div className="text-sm text-gray-900">
                                                     {order.customer_phone}
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="flex items-start gap-2.5">
+                                        <div className="flex items-start gap-2.5 md:col-span-3">
                                             <div
                                                 className="rounded-lg p-1.5"
                                                 style={{
@@ -260,8 +259,10 @@ export const OrderSuccessModal = memo(
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Product Information */}
+                            {/* Order Details */}
+                            <div className="mb-6">
                                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
                                     <div
                                         className="border-b border-gray-100 px-4 py-3"
@@ -275,118 +276,79 @@ export const OrderSuccessModal = memo(
                                                 className="h-4 w-4"
                                                 style={{ color: '#771f48' }}
                                             />
-                                            Order Summary
+                                            Order Details (1 Item)
                                         </h3>
                                     </div>
-                                    <div className="p-4">
-                                        <div className="mb-4 flex items-start gap-3">
-                                            {order.product_image ? (
-                                                <img
-                                                    src={order.product_image}
-                                                    alt={order.product_name}
-                                                    className="h-16 w-16 rounded-lg object-cover shadow-md"
-                                                />
-                                            ) : (
-                                                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100 shadow-md">
-                                                    <Package className="h-8 w-8 text-gray-400" />
+                                    <div className="divide-y divide-gray-200">
+                                        <div className="p-4">
+                                            <div className="mb-2 flex items-center justify-between">
+                                                <div className="text-xs font-semibold text-gray-600">
+                                                    Order #{order.unique_id}
                                                 </div>
-                                            )}
-                                            <div className="flex-1">
-                                                <h4 className="text-sm font-bold text-gray-900">
-                                                    {order.product_name}
-                                                </h4>
-                                                <p
-                                                    className="text-base font-semibold"
-                                                    style={{ color: '#771f48' }}
+                                                <div
+                                                    className="text-sm font-bold"
+                                                    style={{
+                                                        color: '#771f48',
+                                                    }}
                                                 >
                                                     €
                                                     {formatPrice(
-                                                        order.product_price,
+                                                        order.total_amount,
                                                     )}
-                                                </p>
-                                                <div className="mt-1.5 space-y-0.5 text-xs text-gray-600">
-                                                    {order.product_size && (
-                                                        <div>
-                                                            Size:{' '}
-                                                            {order.product_size}
-                                                        </div>
-                                                    )}
-                                                    {order.product_color && (
-                                                        <div>
-                                                            Color:{' '}
-                                                            {
-                                                                order.product_color
-                                                            }
-                                                        </div>
-                                                    )}
-                                                    <div>
-                                                        Quantity:{' '}
-                                                        {order.quantity}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-3">
+                                                {order.product_image ? (
+                                                    <img
+                                                        src={
+                                                            order.product_image
+                                                        }
+                                                        alt={order.product_name}
+                                                        className="h-16 w-16 rounded-lg object-cover shadow-md"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100 shadow-md">
+                                                        <Package className="h-8 w-8 text-gray-400" />
+                                                    </div>
+                                                )}
+                                                <div className="flex-1">
+                                                    <h4 className="text-sm font-bold text-gray-900">
+                                                        {order.product_name}
+                                                    </h4>
+                                                    <p className="text-sm text-gray-600">
+                                                        €
+                                                        {formatPrice(
+                                                            order.product_price,
+                                                        )}{' '}
+                                                        × {order.quantity}
+                                                    </p>
+                                                    <div className="mt-1 flex gap-4 text-xs text-gray-600">
+                                                        {order.product_size && (
+                                                            <span>
+                                                                Size:{' '}
+                                                                {
+                                                                    order.product_size
+                                                                }
+                                                            </span>
+                                                        )}
+                                                        {order.product_color && (
+                                                            <span>
+                                                                Color:{' '}
+                                                                {
+                                                                    order.product_color
+                                                                }
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div className="space-y-2 rounded-xl bg-gray-50 p-4">
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-gray-600">
-                                                    Subtotal:
-                                                </span>
-                                                <span className="font-semibold text-gray-900">
-                                                    €
-                                                    {formatPrice(
-                                                        order.product_price *
-                                                            order.quantity,
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between text-xs">
-                                                <span className="text-gray-600">
-                                                    Delivery:
-                                                </span>
-                                                <span className="font-semibold text-green-600">
-                                                    FREE
-                                                </span>
-                                            </div>
-                                            <div className="border-t border-gray-200 pt-2">
-                                                <div className="flex justify-between">
-                                                    <span className="text-sm font-bold text-gray-900">
-                                                        Total:
-                                                    </span>
-                                                    <span
-                                                        className="text-lg font-bold"
-                                                        style={{
-                                                            color: '#771f48',
-                                                        }}
-                                                    >
-                                                        €
-                                                        {formatPrice(
-                                                            order.total_amount,
-                                                        )}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 p-3">
-                                            <div className="mb-1.5 flex items-center gap-2">
-                                                <CreditCard className="h-4 w-4 text-amber-600" />
-                                                <span className="text-sm font-semibold text-amber-900">
-                                                    Payment Method
-                                                </span>
-                                            </div>
-                                            <p className="text-xs text-amber-700">
-                                                💰 Cash on Delivery - Payment
-                                                will be collected when your
-                                                order arrives
-                                            </p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Order Status and Next Steps */}
-                            <div className="mb-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
+                            {/* Order Summary */}
+                            <div className="mb-6 rounded-xl border border-gray-200 bg-white shadow-md">
                                 <div
                                     className="border-b border-gray-100 px-4 py-3"
                                     style={{
@@ -395,141 +357,106 @@ export const OrderSuccessModal = memo(
                                     }}
                                 >
                                     <h3 className="flex items-center gap-2 text-base font-bold text-gray-900">
-                                        <Calendar
+                                        <CreditCard
                                             className="h-4 w-4"
                                             style={{ color: '#771f48' }}
                                         />
-                                        What Happens Next?
+                                        Total Summary
                                     </h3>
                                 </div>
                                 <div className="p-4">
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                        <div className="text-center">
-                                            <div className="mb-2 flex justify-center">
-                                                <div
-                                                    className="rounded-full p-3"
-                                                    style={{
-                                                        backgroundColor:
-                                                            'rgba(119, 31, 72, 0.1)',
-                                                    }}
+                                    <div className="space-y-2 rounded-xl bg-gray-50 p-4">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600">
+                                                Items ({order.quantity}):
+                                            </span>
+                                            <span className="font-semibold text-gray-900">
+                                                €
+                                                {formatPrice(
+                                                    order.product_price *
+                                                        order.quantity,
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600">
+                                                Shipping:
+                                            </span>
+                                            <span className="font-semibold text-gray-900">
+                                                €
+                                                {formatPrice(
+                                                    order.total_amount -
+                                                        order.product_price *
+                                                            order.quantity,
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="border-t border-gray-300 pt-2">
+                                            <div className="flex justify-between text-lg">
+                                                <span className="font-bold text-gray-900">
+                                                    Total Amount:
+                                                </span>
+                                                <span
+                                                    className="font-bold"
+                                                    style={{ color: '#771f48' }}
                                                 >
-                                                    <CheckCircle
-                                                        className="h-6 w-6"
-                                                        style={{
-                                                            color: '#771f48',
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <h4 className="text-sm font-bold text-gray-900">
-                                                Order Confirmed
-                                            </h4>
-                                            <p className="mt-1.5 text-xs text-gray-600">
-                                                We've received your order and
-                                                will process it shortly.
-                                            </p>
-                                            <div
-                                                className="mt-1 text-xs font-medium"
-                                                style={{ color: '#771f48' }}
-                                            >
-                                                {order.created_at &&
-                                                    formatDate(
-                                                        order.created_at,
+                                                    €
+                                                    {formatPrice(
+                                                        order.total_amount,
                                                     )}
+                                                </span>
                                             </div>
                                         </div>
-                                        <div className="text-center">
-                                            <div className="mb-2 flex justify-center">
-                                                <div className="rounded-full bg-yellow-100 p-3">
-                                                    <Package className="h-6 w-6 text-yellow-600" />
-                                                </div>
-                                            </div>
-                                            <h4 className="text-sm font-bold text-gray-900">
-                                                Processing
-                                            </h4>
-                                            <p className="mt-1.5 text-xs text-gray-600">
-                                                We'll prepare your order and
-                                                contact you to confirm delivery
-                                                details.
-                                            </p>
-                                            <div className="mt-1 text-xs font-medium text-yellow-600">
-                                                Within 24 hours
-                                            </div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="mb-2 flex justify-center">
-                                                <div className="rounded-full bg-green-100 p-3">
-                                                    <Home className="h-6 w-6 text-green-600" />
-                                                </div>
-                                            </div>
-                                            <h4 className="text-sm font-bold text-gray-900">
-                                                Delivery
-                                            </h4>
-                                            <p className="mt-1.5 text-xs text-gray-600">
-                                                Your order will be delivered to
-                                                your address with cash payment.
-                                            </p>
-                                            <div className="mt-1 text-xs font-medium text-green-600">
-                                                2-5 business days
-                                            </div>
+                                        <div className="mt-3 flex items-center gap-2 text-xs text-gray-600">
+                                            <CreditCard className="h-4 w-4" />
+                                            <span>
+                                                Payment Method: Cash on Delivery
+                                                (COD)
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Contact Information */}
-                            <div className="text-center">
-                                <div className="rounded-xl border border-gray-200 bg-gradient-to-r from-gray-50 to-white p-4">
-                                    <h4 className="mb-2 text-base font-bold text-gray-900">
-                                        Need Help?
-                                    </h4>
-                                    <p className="mb-3 text-xs text-gray-600">
-                                        If you have any questions about your
-                                        order, feel free to contact us.
-                                    </p>
-                                    <div className="flex flex-col justify-center gap-3 text-xs sm:flex-row">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Phone className="h-4 w-4 text-gray-500" />
-                                            <span className="text-gray-700">
-                                                +383 43 509 994
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-center gap-2">
-                                            <Mail className="h-4 w-4 text-gray-500" />
-                                            <span className="text-gray-700">
-                                                info@andshoes-ks.com
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
+                            {/* Next Steps */}
+                            <div className="rounded-xl bg-blue-50 p-4">
+                                <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-blue-900">
+                                    <Calendar className="h-4 w-4" />
+                                    What's Next?
+                                </h4>
+                                <ul className="space-y-1 text-xs text-blue-800">
+                                    <li>
+                                        • We'll contact you within 24 hours to
+                                        confirm your order
+                                    </li>
+                                    <li>
+                                        • Your order will be prepared and
+                                        shipped
+                                    </li>
+                                    <li>
+                                        • You'll receive tracking information
+                                        via email
+                                    </li>
+                                    <li>
+                                        • Payment will be collected upon
+                                        delivery
+                                    </li>
+                                </ul>
                             </div>
                         </div>
 
                         {/* Modal Footer */}
                         <div className="shrink-0 border-t border-gray-200 bg-gray-50 px-6 py-4">
-                            <div className="flex flex-col justify-center gap-3 sm:flex-row">
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-gray-600">
+                                    Need help? Contact us at
+                                    info@andshoes-ks.com
+                                </p>
                                 <button
                                     onClick={onClose}
-                                    className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl focus:ring-4 focus:ring-offset-2 focus:outline-none"
-                                    style={{ backgroundColor: '#771f48' }}
-                                    onMouseEnter={(e) =>
-                                        (e.currentTarget.style.backgroundColor =
-                                            '#5a1737')
-                                    }
-                                    onMouseLeave={(e) =>
-                                        (e.currentTarget.style.backgroundColor =
-                                            '#771f48')
-                                    }
+                                    className="rounded-lg bg-pink-800 px-6 py-2 text-sm font-medium text-white hover:bg-pink-900 focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 focus:outline-none"
                                 >
-                                    <Home className="h-4 w-4" />
                                     Continue Shopping
-                                </button>
-                                <button
-                                    onClick={() => window.print()}
-                                    className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-700 shadow-md transition-all duration-300 hover:scale-105 hover:border-gray-400 hover:bg-gray-50 focus:ring-4 focus:ring-gray-200 focus:ring-offset-2 focus:outline-none"
-                                >
-                                    <Package className="h-4 w-4" />
-                                    Print Order Details
                                 </button>
                             </div>
                         </div>

@@ -106,6 +106,7 @@ const fetchProducts = async (
                     product.image_url ||
                     product.image ||
                     `https://picsum.photos/seed/${product.id}/400/400`, // Use image_url from Media Library
+                all_images: product.all_images || [], // Multiple images for gallery
                 stock: product.stock || 0,
                 foot_numbers: product.foot_numbers, // Added missing foot_numbers field
                 sizeStocks: product.sizeStocks || {}, // Size-specific stock quantities
@@ -258,6 +259,7 @@ function StorefrontContent({
                                               product.image_url ||
                                               product.image ||
                                               `https://picsum.photos/seed/${product.id}/400/400`,
+                                          all_images: product.all_images || [],
                                           stock: product.stock_quantity || 0,
                                           foot_numbers: product.foot_numbers,
                                           sizeStocks: product.sizeStocks || {},
@@ -298,6 +300,7 @@ function StorefrontContent({
                     campaign.product.image_url ||
                     campaign.product.image ||
                     `https://picsum.photos/seed/${campaign.product.id}/400/400`,
+                all_images: campaign.product.all_images || [],
                 stock: campaign.product.stock || 0,
                 foot_numbers: campaign.product.foot_numbers,
                 sizeStocks: campaign.product.sizeStocks || {}, // Size-specific stock quantities
