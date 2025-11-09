@@ -7,10 +7,11 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { BannerCarousel } from '../components/BannerCarousel';
 import { CartDrawer } from '../components/CartDrawer';
-import { CheckoutModal } from '../components/CheckoutModal';
+import { CheckoutModal } from '../components/CheckoutModalSimple';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
+import { MultiOrderSuccessModal } from '../components/MultiOrderSuccessModal';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
 import { ProductGrid } from '../components/ProductGrid';
 import { QuickView } from '../components/QuickView';
@@ -105,6 +106,7 @@ const fetchProducts = async (
                     product.image_url ||
                     product.image ||
                     `https://picsum.photos/seed/${product.id}/400/400`, // Use image_url from Media Library
+                all_images: product.all_images || [], // Multiple images for gallery
                 stock: product.stock || 0,
                 foot_numbers: product.foot_numbers, // Added missing foot_numbers field
                 sizeStocks: product.sizeStocks || {}, // Size-specific stock quantities
@@ -178,11 +180,15 @@ function StorefrontContent({
 
     const {
         isOpen: isCheckoutOpen,
-        product: checkoutProduct,
+        items: checkoutItems,
         closeCheckout,
         isSuccessOpen,
         successOrder,
         closeSuccess,
+        isMultiSuccessOpen,
+        successOrders,
+        totalAmount,
+        closeMultiSuccess,
     } = useCheckoutStore();
 
     // Update filters when debounced search changes
@@ -253,6 +259,7 @@ function StorefrontContent({
                                               product.image_url ||
                                               product.image ||
                                               `https://picsum.photos/seed/${product.id}/400/400`,
+                                          all_images: product.all_images || [],
                                           stock: product.stock_quantity || 0,
                                           foot_numbers: product.foot_numbers,
                                           sizeStocks: product.sizeStocks || {},
@@ -293,6 +300,7 @@ function StorefrontContent({
                     campaign.product.image_url ||
                     campaign.product.image ||
                     `https://picsum.photos/seed/${campaign.product.id}/400/400`,
+                all_images: campaign.product.all_images || [],
                 stock: campaign.product.stock || 0,
                 foot_numbers: campaign.product.foot_numbers,
                 sizeStocks: campaign.product.sizeStocks || {}, // Size-specific stock quantities
@@ -389,11 +397,10 @@ function StorefrontContent({
             />
 
             {/* Checkout Modal */}
-            {checkoutProduct && (
+            {checkoutItems.length > 0 && (
                 <CheckoutModal
                     isOpen={isCheckoutOpen}
                     onClose={closeCheckout}
-                    product={checkoutProduct}
                 />
             )}
 
@@ -403,6 +410,16 @@ function StorefrontContent({
                     isOpen={isSuccessOpen}
                     onClose={closeSuccess}
                     order={successOrder}
+                />
+            )}
+
+            {/* Multi-Order Success Modal */}
+            {successOrders.length > 0 && (
+                <MultiOrderSuccessModal
+                    isOpen={isMultiSuccessOpen}
+                    onClose={closeMultiSuccess}
+                    orders={successOrders}
+                    totalAmount={totalAmount}
                 />
             )}
         </div>

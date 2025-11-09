@@ -33,9 +33,10 @@ interface Product {
     image?: string;
 }
 
-interface Order {
+interface SingleOrder {
     id: number;
     unique_id: string;
+    batch_id?: string | null;
     customer_full_name: string;
     customer_email: string;
     customer_phone: string;
@@ -65,6 +66,40 @@ interface Order {
     created_at?: string;
     updated_at?: string;
     product?: Product;
+}
+
+interface Order {
+    id: number;
+    is_batch: boolean;
+    batch_id?: string | null;
+    unique_id: string;
+    customer_full_name: string;
+    customer_email: string;
+    customer_phone: string;
+    customer_address: string;
+    customer_city: string;
+    customer_country: 'albania' | 'kosovo' | 'macedonia';
+    product_id?: number;
+    product_name?: string;
+    product_price?: number;
+    product_image?: string;
+    product_size?: string;
+    product_color?: string;
+    quantity?: number;
+    total_amount: number;
+    payment_method: 'cash';
+    status:
+        | 'pending'
+        | 'confirmed'
+        | 'processing'
+        | 'shipped'
+        | 'delivered'
+        | 'cancelled';
+    notes?: string;
+    created_at?: string;
+    updated_at?: string;
+    product?: Product;
+    orders?: SingleOrder[]; // For batched orders
 }
 
 interface Pagination {
@@ -515,36 +550,84 @@ export default function Orders({
 
                                                     {/* Product */}
                                                     <td className="px-4 py-3">
-                                                        <div className="flex items-center gap-2">
-                                                            {order.product_image ? (
-                                                                <img
-                                                                    src={
-                                                                        order.product_image
-                                                                    }
-                                                                    alt={
-                                                                        order.product_name
-                                                                    }
-                                                                    className="h-10 w-10 rounded-lg object-cover"
-                                                                />
-                                                            ) : (
-                                                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-                                                                    <Package className="h-5 w-5 text-gray-400" />
+                                                        {order.is_batch &&
+                                                        order.orders ? (
+                                                            <div className="flex flex-col gap-2">
+                                                                <div className="flex items-center gap-2 rounded-lg border border-purple-200 bg-purple-50 px-2 py-1">
+                                                                    <Package className="h-4 w-4 text-purple-600" />
+                                                                    <span className="text-xs font-bold text-purple-700">
+                                                                        {
+                                                                            order
+                                                                                .orders
+                                                                                .length
+                                                                        }{' '}
+                                                                        Products
+                                                                    </span>
                                                                 </div>
-                                                            )}
-                                                            <div>
-                                                                <div className="text-xs font-semibold text-gray-900">
-                                                                    {
-                                                                        order.product_name
-                                                                    }
-                                                                </div>
-                                                                <div className="text-xs text-gray-500">
-                                                                    Qty:{' '}
-                                                                    {
-                                                                        order.quantity
-                                                                    }
+                                                                <div className="max-h-20 space-y-1 overflow-y-auto">
+                                                                    {order.orders.map(
+                                                                        (
+                                                                            item,
+                                                                            idx,
+                                                                        ) => (
+                                                                            <div
+                                                                                key={
+                                                                                    idx
+                                                                                }
+                                                                                className="flex items-center gap-1.5 text-xs text-gray-600"
+                                                                            >
+                                                                                <span className="flex h-4 w-4 items-center justify-center rounded bg-gray-100 text-[10px] font-semibold">
+                                                                                    {idx +
+                                                                                        1}
+                                                                                </span>
+                                                                                <span className="max-w-[150px] truncate">
+                                                                                    {
+                                                                                        item.product_name
+                                                                                    }
+                                                                                </span>
+                                                                                <span className="text-gray-400">
+                                                                                    ×
+                                                                                    {
+                                                                                        item.quantity
+                                                                                    }
+                                                                                </span>
+                                                                            </div>
+                                                                        ),
+                                                                    )}
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2">
+                                                                {order.product_image ? (
+                                                                    <img
+                                                                        src={
+                                                                            order.product_image
+                                                                        }
+                                                                        alt={
+                                                                            order.product_name
+                                                                        }
+                                                                        className="h-10 w-10 rounded-lg object-cover"
+                                                                    />
+                                                                ) : (
+                                                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+                                                                        <Package className="h-5 w-5 text-gray-400" />
+                                                                    </div>
+                                                                )}
+                                                                <div>
+                                                                    <div className="text-xs font-semibold text-gray-900">
+                                                                        {
+                                                                            order.product_name
+                                                                        }
+                                                                    </div>
+                                                                    <div className="text-xs text-gray-500">
+                                                                        Qty:{' '}
+                                                                        {
+                                                                            order.quantity
+                                                                        }
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </td>
 
                                                     {/* Total */}
@@ -973,127 +1056,249 @@ export default function Orders({
                         {/* Content */}
                         <div className="max-h-[70vh] overflow-y-auto p-8">
                             {/* Product Showcase */}
-                            <div className="mb-8 overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white shadow-sm">
-                                <div className="flex flex-col gap-6 p-6 md:flex-row">
-                                    {/* Product Image */}
-                                    {selectedOrder.product_image && (
-                                        <div className="flex-shrink-0">
-                                            <div className="relative overflow-hidden rounded-xl border-4 border-white shadow-lg">
-                                                <img
-                                                    src={
-                                                        selectedOrder.product_image
-                                                    }
-                                                    alt={
-                                                        selectedOrder.product_name
-                                                    }
-                                                    className="h-48 w-48 object-cover"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Product Details */}
-                                    <div className="flex-1 space-y-4">
+                            {selectedOrder.is_batch && selectedOrder.orders ? (
+                                /* Multi-Product Display */
+                                <div className="mb-8 space-y-4">
+                                    <div className="flex items-center gap-3 rounded-xl border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 px-5 py-4">
+                                        <Package className="h-6 w-6 text-purple-600" />
                                         <div>
-                                            <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
-                                                Product
+                                            <span className="text-lg font-bold text-purple-900">
+                                                Multi-Product Order
+                                            </span>
+                                            <p className="text-sm text-purple-700">
+                                                {selectedOrder.orders.length}{' '}
+                                                products in this order
                                             </p>
-                                            <h4 className="mt-1 text-2xl font-bold text-gray-900">
-                                                {selectedOrder.product_name}
-                                            </h4>
                                         </div>
+                                    </div>
 
-                                        <div className="flex flex-wrap gap-3">
-                                            {selectedOrder.product_size && (
-                                                <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2">
-                                                    <Package className="h-4 w-4 text-blue-600" />
-                                                    <span className="text-sm font-semibold text-blue-900">
-                                                        Size:{' '}
-                                                        {
-                                                            selectedOrder.product_size
+                                    {/* Products Grid */}
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        {selectedOrder.orders.map(
+                                            (item, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="overflow-hidden rounded-xl border-2 border-gray-200 bg-white shadow-md transition-all hover:shadow-xl"
+                                                >
+                                                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2">
+                                                        <span className="text-sm font-bold text-white">
+                                                            Product #{idx + 1}
+                                                        </span>
+                                                    </div>
+                                                    <div className="p-4">
+                                                        <div className="flex gap-4">
+                                                            {item.product_image ? (
+                                                                <div className="flex-shrink-0">
+                                                                    <img
+                                                                        src={
+                                                                            item.product_image
+                                                                        }
+                                                                        alt={
+                                                                            item.product_name
+                                                                        }
+                                                                        className="h-24 w-24 rounded-lg border-2 border-gray-200 object-cover shadow-sm"
+                                                                    />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-lg border-2 border-gray-200 bg-gray-100">
+                                                                    <Package className="h-10 w-10 text-gray-400" />
+                                                                </div>
+                                                            )}
+                                                            <div className="flex-1 space-y-2">
+                                                                <h5 className="line-clamp-2 text-base font-bold text-gray-900">
+                                                                    {
+                                                                        item.product_name
+                                                                    }
+                                                                </h5>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {item.product_size && (
+                                                                        <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                                                                            <Package className="h-3 w-3" />
+                                                                            {
+                                                                                item.product_size
+                                                                            }
+                                                                        </span>
+                                                                    )}
+                                                                    {item.product_color && (
+                                                                        <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-semibold text-purple-700">
+                                                                            {
+                                                                                item.product_color
+                                                                            }
+                                                                        </span>
+                                                                    )}
+                                                                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                                                        Qty:{' '}
+                                                                        {
+                                                                            item.quantity
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between pt-1">
+                                                                    <span className="text-xs text-gray-500">
+                                                                        Unit: €
+                                                                        {formatPrice(
+                                                                            item.product_price,
+                                                                        )}
+                                                                    </span>
+                                                                    <span className="text-base font-bold text-emerald-600">
+                                                                        €
+                                                                        {formatPrice(
+                                                                            item.total_amount,
+                                                                        )}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
+
+                                    {/* Total Summary for Batch */}
+                                    <div className="rounded-xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-lg font-bold text-gray-900">
+                                                Total Order Amount:
+                                            </span>
+                                            <span className="text-3xl font-bold text-emerald-600">
+                                                €
+                                                {formatPrice(
+                                                    selectedOrder.total_amount,
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                /* Single Product Display */
+                                <div className="mb-8 overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                                    <div className="flex flex-col gap-6 p-6 md:flex-row">
+                                        {selectedOrder.product_image && (
+                                            <div className="flex-shrink-0">
+                                                <div className="relative overflow-hidden rounded-xl border-4 border-white shadow-lg">
+                                                    <img
+                                                        src={
+                                                            selectedOrder.product_image
                                                         }
+                                                        alt={
+                                                            selectedOrder.product_name
+                                                        }
+                                                        className="h-48 w-48 object-cover"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="flex-1 space-y-4">
+                                            <div>
+                                                <p className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                                                    Product
+                                                </p>
+                                                <h4 className="mt-1 text-2xl font-bold text-gray-900">
+                                                    {selectedOrder.product_name}
+                                                </h4>
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-3">
+                                                {selectedOrder.product_size && (
+                                                    <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2">
+                                                        <Package className="h-4 w-4 text-blue-600" />
+                                                        <span className="text-sm font-semibold text-blue-900">
+                                                            Size:{' '}
+                                                            {
+                                                                selectedOrder.product_size
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {selectedOrder.product_color && (
+                                                    <div className="flex items-center gap-2 rounded-lg bg-purple-50 px-3 py-2">
+                                                        <div
+                                                            className="h-4 w-4 rounded-full border-2 border-purple-300 bg-current"
+                                                            style={{
+                                                                color: selectedOrder.product_color.toLowerCase(),
+                                                            }}
+                                                        ></div>
+                                                        <span className="text-sm font-semibold text-purple-900">
+                                                            {
+                                                                selectedOrder.product_color
+                                                            }
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2">
+                                                    <ShoppingCart className="h-4 w-4 text-amber-600" />
+                                                    <span className="text-sm font-semibold text-amber-900">
+                                                        Qty:{' '}
+                                                        {selectedOrder.quantity}
                                                     </span>
                                                 </div>
-                                            )}
-                                            {selectedOrder.product_color && (
-                                                <div className="flex items-center gap-2 rounded-lg bg-purple-50 px-3 py-2">
-                                                    <div
-                                                        className="h-4 w-4 rounded-full border-2 border-purple-300 bg-current"
-                                                        style={{
-                                                            color: selectedOrder.product_color.toLowerCase(),
-                                                        }}
-                                                    ></div>
-                                                    <span className="text-sm font-semibold text-purple-900">
-                                                        {
-                                                            selectedOrder.product_color
-                                                        }
-                                                    </span>
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2">
-                                                <ShoppingCart className="h-4 w-4 text-amber-600" />
-                                                <span className="text-sm font-semibold text-amber-900">
-                                                    Qty:{' '}
-                                                    {selectedOrder.quantity}
-                                                </span>
                                             </div>
-                                        </div>
 
-                                        {/* Price Breakdown */}
-                                        <div className="space-y-2 rounded-xl bg-white p-4 shadow-sm">
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">
-                                                    Unit Price:
-                                                </span>
-                                                <span className="font-semibold text-gray-900">
-                                                    €
-                                                    {formatPrice(
-                                                        selectedOrder.product_price,
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-600">
-                                                    Subtotal (
-                                                    {selectedOrder.quantity}x):
-                                                </span>
-                                                <span className="font-semibold text-gray-900">
-                                                    €
-                                                    {formatPrice(
-                                                        selectedOrder.product_price *
-                                                            selectedOrder.quantity,
-                                                    )}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between border-t border-gray-200 pt-2 text-sm">
-                                                <span className="text-gray-600">
-                                                    Shipping Fee:
-                                                </span>
-                                                {selectedOrder.customer_country ===
-                                                'kosovo' ? (
-                                                    <span className="font-bold text-green-600">
-                                                        FREE 🎉
+                                            {/* Price Breakdown */}
+                                            <div className="space-y-2 rounded-xl bg-white p-4 shadow-sm">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">
+                                                        Unit Price:
                                                     </span>
-                                                ) : (
-                                                    <span className="font-semibold text-amber-600">
+                                                    <span className="font-semibold text-gray-900">
                                                         €
                                                         {formatPrice(
-                                                            selectedOrder.total_amount -
-                                                                selectedOrder.product_price *
-                                                                    selectedOrder.quantity,
+                                                            selectedOrder.product_price ||
+                                                                0,
                                                         )}
-                                                        <span className="ml-1 text-xs text-gray-500">
-                                                            (
-                                                            {selectedOrder.customer_country ===
-                                                            'albania'
-                                                                ? 'Albania'
-                                                                : 'Macedonia'}{' '}
-                                                            +4€)
-                                                        </span>
                                                     </span>
-                                                )}
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-gray-600">
+                                                        Subtotal (
+                                                        {selectedOrder.quantity}
+                                                        x):
+                                                    </span>
+                                                    <span className="font-semibold text-gray-900">
+                                                        €
+                                                        {formatPrice(
+                                                            (selectedOrder.product_price ||
+                                                                0) *
+                                                                (selectedOrder.quantity ||
+                                                                    0),
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between border-t border-gray-200 pt-2 text-sm">
+                                                    <span className="text-gray-600">
+                                                        Shipping Fee:
+                                                    </span>
+                                                    {selectedOrder.customer_country ===
+                                                    'kosovo' ? (
+                                                        <span className="font-bold text-green-600">
+                                                            FREE 🎉
+                                                        </span>
+                                                    ) : (
+                                                        <span className="font-semibold text-amber-600">
+                                                            €
+                                                            {formatPrice(
+                                                                selectedOrder.total_amount -
+                                                                    (selectedOrder.product_price ||
+                                                                        0) *
+                                                                        (selectedOrder.quantity ||
+                                                                            0),
+                                                            )}
+                                                            <span className="ml-1 text-xs text-gray-500">
+                                                                (
+                                                                {selectedOrder.customer_country ===
+                                                                'albania'
+                                                                    ? 'Albania'
+                                                                    : 'Macedonia'}{' '}
+                                                                +4€)
+                                                            </span>
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
+
                                             <div className="flex justify-between border-t-2 border-emerald-200 pt-3">
                                                 <span className="text-base font-bold text-gray-900">
                                                     Total Amount:
@@ -1108,7 +1313,7 @@ export default function Orders({
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Customer & Order Info Grid */}
                             <div className="grid gap-6 md:grid-cols-2">
@@ -1233,6 +1438,137 @@ export default function Orders({
                                                 </div>
                                             </div>
                                         )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Shipping Information */}
+                            <div className="mt-6 rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-6 shadow-sm">
+                                <h4 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900">
+                                    <div className="rounded-lg bg-amber-100 p-2">
+                                        <Package className="h-5 w-5 text-amber-600" />
+                                    </div>
+                                    Shipping & Pricing Details
+                                </h4>
+
+                                {/* Price Breakdown */}
+                                <div className="mb-4 rounded-xl border-2 border-gray-200 bg-white p-5 shadow-sm">
+                                    <h5 className="mb-3 text-sm font-bold text-gray-700 uppercase">
+                                        💰 Price Breakdown
+                                    </h5>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between border-b border-gray-100 py-2">
+                                            <span className="text-sm text-gray-600">
+                                                Products Subtotal:
+                                            </span>
+                                            <span className="text-base font-semibold text-gray-900">
+                                                {selectedOrder.is_batch &&
+                                                selectedOrder.orders
+                                                    ? `€${formatPrice(
+                                                          selectedOrder.orders.reduce(
+                                                              (sum, order) =>
+                                                                  sum +
+                                                                  (order.product_price ||
+                                                                      0) *
+                                                                      (order.quantity ||
+                                                                          0),
+                                                              0,
+                                                          ),
+                                                      )}`
+                                                    : `€${formatPrice(
+                                                          (selectedOrder.product_price ||
+                                                              0) *
+                                                              (selectedOrder.quantity ||
+                                                                  0),
+                                                      )}`}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between border-b border-gray-100 py-2">
+                                            <span className="flex items-center gap-2 text-sm text-gray-600">
+                                                Shipping Fee
+                                                {selectedOrder.customer_country ===
+                                                    'kosovo' && (
+                                                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                                                        FREE
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <span
+                                                className={`text-base font-semibold ${
+                                                    selectedOrder.customer_country ===
+                                                    'kosovo'
+                                                        ? 'text-green-600'
+                                                        : 'text-amber-600'
+                                                }`}
+                                            >
+                                                {selectedOrder.customer_country ===
+                                                'kosovo'
+                                                    ? '€0.00'
+                                                    : '€4.00'}
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 flex items-center justify-between border-t-2 border-emerald-200 pt-3">
+                                            <span className="text-base font-bold text-gray-900">
+                                                Total Amount:
+                                            </span>
+                                            <span className="text-2xl font-bold text-emerald-600">
+                                                €
+                                                {formatPrice(
+                                                    selectedOrder.total_amount,
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="rounded-xl bg-white/80 p-4 shadow-sm">
+                                        <p className="mb-1 text-xs font-semibold text-gray-500 uppercase">
+                                            Shipping Country
+                                        </p>
+                                        <p className="text-lg font-bold text-gray-900">
+                                            {getCountryLabel(
+                                                selectedOrder.customer_country,
+                                            )}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-xl bg-white/80 p-4 shadow-sm">
+                                        <p className="mb-1 text-xs font-semibold text-gray-500 uppercase">
+                                            Delivery Address
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                            {selectedOrder.customer_address}
+                                        </p>
+                                        <p className="mt-1 text-xs text-gray-600">
+                                            {selectedOrder.customer_city}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-4 rounded-xl border-2 border-blue-200 bg-blue-50 p-4">
+                                    <div className="flex items-start gap-3">
+                                        <div className="flex-shrink-0 rounded-lg bg-blue-100 p-2">
+                                            <Package className="h-5 w-5 text-blue-600" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-blue-900">
+                                                Shipping Instructions
+                                            </p>
+                                            <p className="mt-1 text-sm text-blue-800">
+                                                📦 Package will be delivered to
+                                                the address provided above.
+                                                <br />
+                                                💰 Payment will be collected
+                                                upon delivery (Cash on
+                                                Delivery).
+                                                <br />
+                                                ⏱️ Estimated delivery: 2-5
+                                                business days within{' '}
+                                                {getCountryLabel(
+                                                    selectedOrder.customer_country,
+                                                )}
+                                                .
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

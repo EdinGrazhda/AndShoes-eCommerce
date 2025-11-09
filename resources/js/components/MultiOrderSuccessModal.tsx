@@ -31,15 +31,16 @@ interface Order {
     created_at?: string;
 }
 
-interface OrderSuccessModalProps {
+interface MultiOrderSuccessModalProps {
     isOpen: boolean;
     onClose: () => void;
-    order: Order | null;
+    orders: Order[];
+    totalAmount: number;
 }
 
-export const OrderSuccessModal = memo(
-    ({ isOpen, onClose, order }: OrderSuccessModalProps) => {
-        if (!isOpen || !order) return null;
+export const MultiOrderSuccessModal = memo(
+    ({ isOpen, onClose, orders, totalAmount }: MultiOrderSuccessModalProps) => {
+        if (!isOpen || !orders || orders.length === 0) return null;
 
         const formatPrice = (price: number | string): string => {
             const numPrice =
@@ -70,6 +71,17 @@ export const OrderSuccessModal = memo(
             });
         };
 
+        // Use first order for customer info since all orders have same customer
+        const customerOrder = orders[0];
+        const totalItems = orders.reduce(
+            (sum, order) => sum + order.quantity,
+            0,
+        );
+        const calculatedTotal = orders.reduce(
+            (sum, order) => sum + order.total_amount,
+            0,
+        );
+
         return (
             <>
                 {/* Backdrop */}
@@ -88,7 +100,8 @@ export const OrderSuccessModal = memo(
                         >
                             <div className="flex items-center justify-between">
                                 <h2 className="text-xl font-bold text-white">
-                                    Order Confirmation
+                                    Order Confirmation - {orders.length}{' '}
+                                    {orders.length === 1 ? 'Item' : 'Items'}
                                 </h2>
                                 <button
                                     onClick={onClose}
@@ -112,11 +125,13 @@ export const OrderSuccessModal = memo(
                                     </div>
                                 </div>
                                 <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-                                    Order Placed Successfully!
+                                    {orders.length === 1 ? 'Order' : 'Orders'}{' '}
+                                    Placed Successfully!
                                 </h1>
                                 <p className="mt-2 text-sm text-gray-600">
-                                    Thank you for your order. We'll be in touch
-                                    with you soon.
+                                    Thank you for your order
+                                    {orders.length > 1 ? 's' : ''}. We'll be in
+                                    touch with you soon.
                                 </p>
                                 <div
                                     className="mt-4 rounded-xl border-2 p-4"
@@ -135,12 +150,15 @@ export const OrderSuccessModal = memo(
                                             className="text-base font-semibold"
                                             style={{ color: '#771f48' }}
                                         >
-                                            Order ID: {order.unique_id}
+                                            {orders.length} Order
+                                            {orders.length > 1 ? 's' : ''} •{' '}
+                                            {totalItems} Item
+                                            {totalItems > 1 ? 's' : ''}
                                         </span>
                                     </div>
                                     <p className="mt-1.5 text-xs text-gray-700">
-                                        Keep this order ID for your records. You
-                                        can use it to track your order.
+                                        Each item has been processed as a
+                                        separate order for better tracking.
                                     </p>
                                 </div>
                             </div>
@@ -182,7 +200,9 @@ export const OrderSuccessModal = memo(
                                                     Customer Name
                                                 </div>
                                                 <div className="text-sm font-bold text-gray-900">
-                                                    {order.customer_full_name}
+                                                    {
+                                                        customerOrder.customer_full_name
+                                                    }
                                                 </div>
                                             </div>
                                         </div>
@@ -204,7 +224,9 @@ export const OrderSuccessModal = memo(
                                                     Email Address
                                                 </div>
                                                 <div className="text-sm text-gray-900">
-                                                    {order.customer_email}
+                                                    {
+                                                        customerOrder.customer_email
+                                                    }
                                                 </div>
                                             </div>
                                         </div>
@@ -226,7 +248,9 @@ export const OrderSuccessModal = memo(
                                                     Phone Number
                                                 </div>
                                                 <div className="text-sm text-gray-900">
-                                                    {order.customer_phone}
+                                                    {
+                                                        customerOrder.customer_phone
+                                                    }
                                                 </div>
                                             </div>
                                         </div>
@@ -248,11 +272,16 @@ export const OrderSuccessModal = memo(
                                                     Delivery Address
                                                 </div>
                                                 <div className="text-sm text-gray-900">
-                                                    {order.customer_address}
+                                                    {
+                                                        customerOrder.customer_address
+                                                    }
                                                     <br />
-                                                    {order.customer_city},{' '}
+                                                    {
+                                                        customerOrder.customer_city
+                                                    }
+                                                    ,{' '}
                                                     {getCountryLabel(
-                                                        order.customer_country,
+                                                        customerOrder.customer_country,
                                                     )}
                                                 </div>
                                             </div>
@@ -261,7 +290,7 @@ export const OrderSuccessModal = memo(
                                 </div>
                             </div>
 
-                            {/* Order Details */}
+                            {/* Orders List */}
                             <div className="mb-6">
                                 <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
                                     <div
@@ -276,79 +305,87 @@ export const OrderSuccessModal = memo(
                                                 className="h-4 w-4"
                                                 style={{ color: '#771f48' }}
                                             />
-                                            Order Details (1 Item)
+                                            Order Details ({orders.length}{' '}
+                                            {orders.length === 1
+                                                ? 'Item'
+                                                : 'Items'}
+                                            )
                                         </h3>
                                     </div>
                                     <div className="divide-y divide-gray-200">
-                                        <div className="p-4">
-                                            <div className="mb-2 flex items-center justify-between">
-                                                <div className="text-xs font-semibold text-gray-600">
-                                                    Order #{order.unique_id}
-                                                </div>
-                                                <div
-                                                    className="text-sm font-bold"
-                                                    style={{
-                                                        color: '#771f48',
-                                                    }}
-                                                >
-                                                    €
-                                                    {formatPrice(
-                                                        order.total_amount,
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-start gap-3">
-                                                {order.product_image ? (
-                                                    <img
-                                                        src={
-                                                            order.product_image
-                                                        }
-                                                        alt={order.product_name}
-                                                        className="h-16 w-16 rounded-lg object-cover shadow-md"
-                                                    />
-                                                ) : (
-                                                    <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100 shadow-md">
-                                                        <Package className="h-8 w-8 text-gray-400" />
+                                        {orders.map((order, index) => (
+                                            <div key={order.id} className="p-4">
+                                                <div className="mb-2 flex items-center justify-between">
+                                                    <div className="text-xs font-semibold text-gray-600">
+                                                        Order #{order.unique_id}
                                                     </div>
-                                                )}
-                                                <div className="flex-1">
-                                                    <h4 className="text-sm font-bold text-gray-900">
-                                                        {order.product_name}
-                                                    </h4>
-                                                    <p className="text-sm text-gray-600">
+                                                    <div
+                                                        className="text-sm font-bold"
+                                                        style={{
+                                                            color: '#771f48',
+                                                        }}
+                                                    >
                                                         €
                                                         {formatPrice(
-                                                            order.product_price,
-                                                        )}{' '}
-                                                        × {order.quantity}
-                                                    </p>
-                                                    <div className="mt-1 flex gap-4 text-xs text-gray-600">
-                                                        {order.product_size && (
-                                                            <span>
-                                                                Size:{' '}
-                                                                {
-                                                                    order.product_size
-                                                                }
-                                                            </span>
-                                                        )}
-                                                        {order.product_color && (
-                                                            <span>
-                                                                Color:{' '}
-                                                                {
-                                                                    order.product_color
-                                                                }
-                                                            </span>
+                                                            order.total_amount,
                                                         )}
                                                     </div>
                                                 </div>
+                                                <div className="flex items-start gap-3">
+                                                    {order.product_image ? (
+                                                        <img
+                                                            src={
+                                                                order.product_image
+                                                            }
+                                                            alt={
+                                                                order.product_name
+                                                            }
+                                                            className="h-16 w-16 rounded-lg object-cover shadow-md"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-100 shadow-md">
+                                                            <Package className="h-8 w-8 text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                    <div className="flex-1">
+                                                        <h4 className="text-sm font-bold text-gray-900">
+                                                            {order.product_name}
+                                                        </h4>
+                                                        <p className="text-sm text-gray-600">
+                                                            €
+                                                            {formatPrice(
+                                                                order.product_price,
+                                                            )}{' '}
+                                                            × {order.quantity}
+                                                        </p>
+                                                        <div className="mt-1 flex gap-4 text-xs text-gray-600">
+                                                            {order.product_size && (
+                                                                <span>
+                                                                    Size:{' '}
+                                                                    {
+                                                                        order.product_size
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                            {order.product_color && (
+                                                                <span>
+                                                                    Color:{' '}
+                                                                    {
+                                                                        order.product_color
+                                                                    }
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Order Summary */}
-                            <div className="mb-6 rounded-xl border border-gray-200 bg-white shadow-md">
+                            <div className="rounded-xl border border-gray-200 bg-white shadow-md">
                                 <div
                                     className="border-b border-gray-100 px-4 py-3"
                                     style={{
@@ -368,13 +405,18 @@ export const OrderSuccessModal = memo(
                                     <div className="space-y-2 rounded-xl bg-gray-50 p-4">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">
-                                                Items ({order.quantity}):
+                                                Items ({totalItems}):
                                             </span>
                                             <span className="font-semibold text-gray-900">
                                                 €
                                                 {formatPrice(
-                                                    order.product_price *
-                                                        order.quantity,
+                                                    orders.reduce(
+                                                        (sum, order) =>
+                                                            sum +
+                                                            order.product_price *
+                                                                order.quantity,
+                                                        0,
+                                                    ),
                                                 )}
                                             </span>
                                         </div>
@@ -385,9 +427,14 @@ export const OrderSuccessModal = memo(
                                             <span className="font-semibold text-gray-900">
                                                 €
                                                 {formatPrice(
-                                                    order.total_amount -
-                                                        order.product_price *
-                                                            order.quantity,
+                                                    orders.reduce(
+                                                        (sum, order) =>
+                                                            sum +
+                                                            order.total_amount -
+                                                            order.product_price *
+                                                                order.quantity,
+                                                        0,
+                                                    ),
                                                 )}
                                             </span>
                                         </div>
@@ -402,7 +449,7 @@ export const OrderSuccessModal = memo(
                                                 >
                                                     €
                                                     {formatPrice(
-                                                        order.total_amount,
+                                                        calculatedTotal,
                                                     )}
                                                 </span>
                                             </div>
@@ -419,7 +466,7 @@ export const OrderSuccessModal = memo(
                             </div>
 
                             {/* Next Steps */}
-                            <div className="rounded-xl bg-blue-50 p-4">
+                            <div className="mt-6 rounded-xl bg-blue-50 p-4">
                                 <h4 className="mb-2 flex items-center gap-2 text-sm font-bold text-blue-900">
                                     <Calendar className="h-4 w-4" />
                                     What's Next?
@@ -430,8 +477,9 @@ export const OrderSuccessModal = memo(
                                         confirm your order
                                     </li>
                                     <li>
-                                        • Your order will be prepared and
-                                        shipped
+                                        • Your order
+                                        {orders.length > 1 ? 's' : ''} will be
+                                        prepared and shipped
                                     </li>
                                     <li>
                                         • You'll receive tracking information
@@ -467,4 +515,4 @@ export const OrderSuccessModal = memo(
     },
 );
 
-OrderSuccessModal.displayName = 'OrderSuccessModal';
+MultiOrderSuccessModal.displayName = 'MultiOrderSuccessModal';

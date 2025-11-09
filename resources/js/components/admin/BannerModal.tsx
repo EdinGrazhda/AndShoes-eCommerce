@@ -7,7 +7,6 @@ interface Banner {
     header: string;
     description?: string;
     image_url?: string;
-    thumbnail_url?: string;
     has_image: boolean;
 }
 

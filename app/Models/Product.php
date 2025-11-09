@@ -30,7 +30,7 @@ class Product extends Model implements HasMedia
         'stock_quantity' => 'integer',
     ];
 
-    protected $appends = ['image_url', 'stock_status', 'total_stock'];
+    protected $appends = ['image_url', 'stock_status', 'total_stock', 'all_images'];
 
     /**
      * Get size-specific stock records
@@ -82,24 +82,36 @@ class Product extends Model implements HasMedia
     {
         $this->addMediaCollection('images')
             ->useFallbackUrl('/images/placeholder.jpg')
-            ->useFallbackPath(public_path('/images/placeholder.jpg'));
-    }
+            ->useFallbackPath(public_path('/images/placeholder.jpg'))
+            ->registerMediaConversions(function (Media $media) {
+                $this->addMediaConversion('thumb')
+                    ->width(150)
+                    ->height(150)
+                    ->sharpen(10);
 
+                $this->addMediaConversion('preview')
+                    ->width(400)
+                    ->height(400)
+                    ->sharpen(10);
+            });
+    }
+    
     /**
-     * Register media conversions
+     * Get all product images URLs
      */
-    public function registerMediaConversions(?Media $media = null): void
+    public function getAllImagesAttribute()
     {
-        $this->addMediaConversion('thumb')
-            ->width(150)
-            ->height(150)
-            ->sharpen(10);
-
-        $this->addMediaConversion('preview')
-            ->width(400)
-            ->height(400)
-            ->sharpen(10);
+        return $this->getMedia('images')->map(function ($media) {
+            return [
+                'id' => $media->id,
+                'url' => $media->getUrl('preview'),
+                'thumb' => $media->getUrl('thumb'),
+                'original' => $media->getUrl(),
+            ];
+        })->toArray();
     }
+
+
 
     /**
      * Get the product's image URL (for backward compatibility)
