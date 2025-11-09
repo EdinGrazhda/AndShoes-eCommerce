@@ -491,13 +491,13 @@ export const OrderSuccessModal = memo(
                                         <div className="flex items-center justify-center gap-2">
                                             <Phone className="h-4 w-4 text-gray-500" />
                                             <span className="text-gray-700">
-                                                +355 69 123 4567
+                                                +383 43 509 994
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-center gap-2">
                                             <Mail className="h-4 w-4 text-gray-500" />
                                             <span className="text-gray-700">
-                                                support@andshoes.com
+                                                info@andshoes-ks.com
                                             </span>
                                         </div>
                                     </div>

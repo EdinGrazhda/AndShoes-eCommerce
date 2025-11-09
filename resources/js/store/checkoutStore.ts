@@ -22,39 +22,46 @@ interface Order {
     created_at?: string;
 }
 
-interface CheckoutState {
-    isOpen: boolean;
-    product: Product | null;
+export interface CheckoutItem {
+    product: Product;
     selectedSize: string | null;
     quantity: number;
+}
+
+interface CheckoutState {
+    isOpen: boolean;
+    items: CheckoutItem[];
     isSuccessOpen: boolean;
     successOrder: Order | null;
-    openCheckout: (
-        product: Product,
-        selectedSize?: string,
-        quantity?: number,
-    ) => void;
+    isMultiSuccessOpen: boolean;
+    successOrders: Order[];
+    totalAmount: number;
+    openCheckout: (items: CheckoutItem[]) => void;
     closeCheckout: () => void;
     openSuccess: (order: Order) => void;
     closeSuccess: () => void;
+    openMultiSuccess: (orders: Order[], totalAmount: number) => void;
+    closeMultiSuccess: () => void;
 }
 
 export const useCheckoutStore = create<CheckoutState>((set) => ({
     isOpen: false,
-    product: null,
-    selectedSize: null,
-    quantity: 1,
+    items: [],
     isSuccessOpen: false,
     successOrder: null,
-    openCheckout: (product, selectedSize, quantity = 1) =>
+    isMultiSuccessOpen: false,
+    successOrders: [],
+    totalAmount: 0,
+    openCheckout: (items) =>
         set({
             isOpen: true,
-            product,
-            selectedSize: selectedSize || null,
-            quantity,
+            items,
         }),
-    closeCheckout: () =>
-        set({ isOpen: false, product: null, selectedSize: null, quantity: 1 }),
+    closeCheckout: () => set({ isOpen: false, items: [] }),
     openSuccess: (order) => set({ isSuccessOpen: true, successOrder: order }),
     closeSuccess: () => set({ isSuccessOpen: false, successOrder: null }),
+    openMultiSuccess: (orders, totalAmount) =>
+        set({ isMultiSuccessOpen: true, successOrders: orders, totalAmount }),
+    closeMultiSuccess: () =>
+        set({ isMultiSuccessOpen: false, successOrders: [], totalAmount: 0 }),
 }));

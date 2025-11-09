@@ -27,19 +27,18 @@ export const CartDrawer = memo(() => {
             return;
         }
 
-        // For now, we'll use the first item in the cart for checkout
-        // In a real application, you might want to handle multiple items differently
-        const firstItem = items[0];
+        // Convert cart items to checkout items
+        const checkoutItems = items.map((item) => ({
+            product: item.product,
+            selectedSize: item.product.selectedSize || null,
+            quantity: item.quantity,
+        }));
 
         // Close the cart drawer
         closeCart();
 
-        // Open checkout modal with the product, selected size, and quantity
-        openCheckout(
-            firstItem.product,
-            firstItem.product.selectedSize,
-            firstItem.quantity,
-        );
+        // Open checkout modal with all cart items
+        openCheckout(checkoutItems);
     };
 
     if (!isOpen) return null;

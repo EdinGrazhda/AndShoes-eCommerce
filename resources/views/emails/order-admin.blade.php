@@ -6,7 +6,7 @@
     <title>New Order Notification</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
             background-color: #f4f4f4;
@@ -14,130 +14,216 @@
             padding: 0;
         }
         .container {
-            max-width: 600px;
+            max-width: 650px;
             margin: 20px auto;
             background: #fff;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .header {
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
             color: #fff;
-            padding: 30px;
+            padding: 35px 30px;
             text-align: center;
         }
         .header h1 {
-            margin: 0;
-            font-size: 28px;
+            margin: 0 0 10px 0;
+            font-size: 32px;
+            font-weight: 700;
         }
         .alert-badge {
             display: inline-block;
-            background: #fff;
+            background: rgba(255, 255, 255, 0.95);
             color: #dc3545;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            margin-top: 10px;
+            padding: 8px 24px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.5px;
         }
         .content {
-            padding: 30px;
+            padding: 35px 30px;
         }
-        .order-info {
+        .alert-message {
             background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 20px;
-            border-radius: 6px;
+            border-left: 5px solid #ffc107;
+            padding: 18px 20px;
+            border-radius: 8px;
             margin: 20px 0;
+            font-size: 15px;
         }
-        .order-info h2 {
+        .alert-message strong {
             color: #856404;
-            margin-top: 0;
-            font-size: 20px;
+        }
+        .order-summary {
+            background: #f8f9fa;
+            border-left: 4px solid #771f48;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .order-summary h3 {
+            color: #771f48;
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .info-grid {
+            display: grid;
+            gap: 10px;
         }
         .info-row {
             display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .info-row:last-child {
-            border-bottom: none;
+            font-size: 14px;
         }
         .label {
-            font-weight: bold;
+            font-weight: 600;
             color: #666;
+            width: 140px;
+            flex-shrink: 0;
         }
         .value {
             color: #333;
-            text-align: right;
+            font-weight: 500;
         }
-        .product-details {
-            background: #e7f3ff;
-            border: 2px solid #007bff;
-            border-radius: 6px;
-            padding: 20px;
-            margin: 20px 0;
+        .product-card {
+            background: #fff;
+            border: 2px solid #771f48;
+            border-radius: 12px;
+            padding: 0;
+            margin: 25px 0;
+            overflow: hidden;
         }
-        .product-details h3 {
-            color: #007bff;
-            margin-top: 0;
-        }
-        .product-item {
-            padding: 10px 0;
-            border-bottom: 1px solid #cce5ff;
-        }
-        .product-item:last-child {
-            border-bottom: none;
-        }
-        .total {
-            background: #28a745;
-            color: #fff;
+        .card-header {
+            background: linear-gradient(135deg, #771f48 0%, #9d2a5f 100%);
+            color: white;
             padding: 15px 20px;
-            border-radius: 6px;
-            margin: 20px 0;
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .product-content {
+            padding: 20px;
+        }
+        .product-info {
+            width: 100%;
+        }
+        .product-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 12px 0;
+        }
+        .product-specs {
+            display: grid;
+            gap: 8px;
+        }
+        .spec-row {
+            display: flex;
+            font-size: 14px;
+        }
+        .spec-label {
+            font-weight: 600;
+            color: #666;
+            width: 100px;
+            flex-shrink: 0;
+        }
+        .spec-value {
+            color: #333;
+        }
+        .summary-box {
+            background: linear-gradient(135deg, #28a745 0%, #20883c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 25px 0;
             text-align: center;
         }
-        .customer-info {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 6px;
-            margin: 20px 0;
+        .summary-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0;
         }
-        .customer-info h2 {
-            color: #761f49;
-            margin-top: 0;
-            font-size: 18px;
+        .summary-amount {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+        .customer-box {
+            background: #f8f9fa;
+            border-left: 4px solid #771f48;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .customer-box h3 {
+            color: #771f48;
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .customer-grid {
+            display: grid;
+            gap: 10px;
+        }
+        .customer-row {
+            display: flex;
+            font-size: 14px;
+        }
+        .customer-label {
+            font-weight: 600;
+            color: #666;
+            width: 140px;
+            flex-shrink: 0;
+        }
+        .customer-value {
+            color: #333;
+        }
+        .customer-value a {
+            color: #771f48;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .action-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #771f48 0%, #9d2a5f 100%);
+            color: #fff !important;
+            padding: 14px 35px;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 25px 0;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 4px 8px rgba(119, 31, 72, 0.3);
         }
         .footer {
-            background: #f9f9f9;
-            padding: 20px;
+            background: #f8f9fa;
+            padding: 25px 20px;
             text-align: center;
             color: #666;
             font-size: 14px;
         }
-        .action-button {
-            display: inline-block;
-            background: #761f49;
-            color: #fff;
-            padding: 12px 30px;
-            text-decoration: none;
-            border-radius: 6px;
-            margin: 20px 0;
-            font-weight: bold;
-        }
         .status-badge {
             display: inline-block;
-            padding: 5px 15px;
+            padding: 6px 16px;
             border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 13px;
+            font-weight: 700;
         }
         .status-pending {
-            background: #fef3cd;
+            background: #fff3cd;
             color: #856404;
+        }
+        .status-processing {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
         }
     </style>
 </head>
@@ -149,101 +235,133 @@
         </div>
 
         <div class="content">
-            <p><strong>Hello Admin,</strong></p>
-            <p>You have received a new order. Please review and process it as soon as possible.</p>
-
-            <div class="order-info">
-                <h2>📋 Order Summary</h2>
-                <div class="info-row">
-                    <span class="label">Order Number:</span>
-                    <span class="value"><strong>#{{ $order->order_number }}</strong></span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Order Date:</span>
-                    <span class="value">{{ $order->created_at->format('F d, Y - H:i') }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Status:</span>
-                    <span class="value">
-                        <span class="status-badge status-{{ $order->status }}">
-                            {{ ucfirst($order->status) }}
-                        </span>
-                    </span>
-                </div>
+            <div class="alert-message">
+                <strong>⚠️ New Order Alert!</strong> A customer has just placed an order. Please review and process it promptly.
             </div>
 
-            <div class="product-details">
-                <h3>📦 Product Information</h3>
-
-                <div class="product-item">
-                    <strong>Product:</strong> {{ $order->product_name }}<br>
-                    <strong>Quantity:</strong> {{ $order->quantity }}<br>
-                    <strong>Price per item:</strong> €{{ number_format($order->product_price, 2) }}<br>
-                    @if($order->product_size)
-                        <strong>Size:</strong> {{ $order->product_size }}<br>
-                    @endif
-                    @if($order->product_color)
-                        <strong>Color:</strong> {{ $order->product_color }}<br>
-                    @endif
-                </div>
-            </div>
-
-            <div class="total">
-                Total Order Value: €{{ number_format($order->total_amount, 2) }}
-            </div>
-
-            <div class="customer-info">
-                <h2>👤 Customer Information</h2>
-                <div class="info-row">
-                    <span class="label">Full Name:</span>
-                    <span class="value">{{ $order->customer_full_name }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Email:</span>
-                    <span class="value"><a href="mailto:{{ $order->customer_email }}" style="color: #761f49;">{{ $order->customer_email }}</a></span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Phone:</span>
-                    <span class="value"><a href="tel:{{ $order->customer_phone }}" style="color: #761f49;">{{ $order->customer_phone }}</a></span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Country:</span>
-                    <span class="value">{{ ucfirst($order->customer_country) }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">City:</span>
-                    <span class="value">{{ $order->customer_city }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Shipping Address:</span>
-                    <span class="value">{{ $order->customer_address }}</span>
-                </div>
-                @if($order->notes)
+            <div class="order-summary">
+                <h3>📋 Order Information</h3>
+                <div class="info-grid">
                     <div class="info-row">
-                        <span class="label">Order Notes:</span>
-                        <span class="value">{{ $order->notes }}</span>
+                        <span class="label">Order Number:</span>
+                        <span class="value"><strong>#{{ $order->order_number }}</strong></span>
                     </div>
-                @endif
-                <div class="info-row">
-                    <span class="label">Payment Method:</span>
-                    <span class="value">{{ ucfirst(str_replace('_', ' ', $order->payment_method)) }}</span>
+                    <div class="info-row">
+                        <span class="label">Order Date:</span>
+                        <span class="value">{{ $order->created_at->format('F d, Y - H:i') }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Status:</span>
+                        <span class="value">
+                            <span class="status-badge status-{{ $order->status }}">
+                                {{ ucfirst($order->status) }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Payment Method:</span>
+                        <span class="value">{{ ucfirst(str_replace('_', ' ', $order->payment_method)) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="product-card">
+                <div class="card-header">
+                    📦 Product Details
+                </div>
+                <div class="product-content">
+                    <div class="product-info">
+                        <h3 class="product-name">{{ $order->product_name }}</h3>
+                        <div class="product-specs">
+                            @if($order->product_size)
+                            <div class="spec-row">
+                                <span class="spec-label">Size:</span>
+                                <span class="spec-value">{{ $order->product_size }}</span>
+                            </div>
+                            @endif
+                            @if($order->product_color)
+                            <div class="spec-row">
+                                <span class="spec-label">Color:</span>
+                                <span class="spec-value">{{ $order->product_color }}</span>
+                            </div>
+                            @endif
+                            <div class="spec-row">
+                                <span class="spec-label">Quantity:</span>
+                                <span class="spec-value">{{ $order->quantity }}</span>
+                            </div>
+                            <div class="spec-row">
+                                <span class="spec-label">Unit Price:</span>
+                                <span class="spec-value">€{{ number_format($order->product_price, 2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="summary-box">
+                <p class="summary-label">Total Order Value</p>
+                <p class="summary-amount">€{{ number_format($order->total_amount, 2) }}</p>
+            </div>
+
+            <div class="customer-box">
+                <h3>👤 Customer Information</h3>
+                <div class="customer-grid">
+                    <div class="customer-row">
+                        <span class="customer-label">Full Name:</span>
+                        <span class="customer-value">{{ $order->customer_full_name }}</span>
+                    </div>
+                    <div class="customer-row">
+                        <span class="customer-label">Email:</span>
+                        <span class="customer-value">
+                            <a href="mailto:{{ $order->customer_email }}">{{ $order->customer_email }}</a>
+                        </span>
+                    </div>
+                    <div class="customer-row">
+                        <span class="customer-label">Phone:</span>
+                        <span class="customer-value">
+                            <a href="tel:{{ $order->customer_phone }}">{{ $order->customer_phone }}</a>
+                        </span>
+                    </div>
+                    <div class="customer-row">
+                        <span class="customer-label">Country:</span>
+                        <span class="customer-value">{{ ucfirst($order->customer_country) }}</span>
+                    </div>
+                    <div class="customer-row">
+                        <span class="customer-label">City:</span>
+                        <span class="customer-value">{{ $order->customer_city }}</span>
+                    </div>
+                    <div class="customer-row">
+                        <span class="customer-label">Address:</span>
+                        <span class="customer-value">{{ $order->customer_address }}</span>
+                    </div>
+                    @if($order->notes)
+                    <div class="customer-row">
+                        <span class="customer-label">Order Notes:</span>
+                        <span class="customer-value"><em>{{ $order->notes }}</em></span>
+                    </div>
+                    @endif
                 </div>
             </div>
 
             <div style="text-align: center;">
                 <a href="{{ config('app.url') }}/admin/orders" class="action-button">
-                    View Order in Admin Panel
+                    🎯 View in Admin Panel
                 </a>
             </div>
 
-            <p style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 6px;">
-                <strong>⚠️ Action Required:</strong> Please process this order and update the customer with shipping information.
+            <p style="margin-top: 25px; padding: 18px 20px; background: #fff3cd; border-radius: 8px; border-left: 5px solid #ffc107;">
+                <strong>⚡ Action Required:</strong> Please process this order and update the customer with shipping information as soon as possible.
             </p>
         </div>
 
         <div class="footer">
-            <p><strong>AndShoes Admin Panel</strong></p>
-            <p style="margin-top: 10px; font-size: 12px; color: #999;">
+            <p style="margin: 0 0 10px 0; font-weight: 600;">
+                <strong style="color: #771f48;">AndShoes</strong> Admin Panel
+            </p>
+            <p style="margin: 10px 0; font-size: 13px;">
+                Order Management System
+            </p>
+            <p style="margin-top: 15px; font-size: 12px; color: #999;">
                 This is an automated notification for new orders.
             </p>
         </div>

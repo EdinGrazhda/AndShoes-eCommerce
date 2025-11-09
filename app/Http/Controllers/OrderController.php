@@ -30,6 +30,7 @@ class OrderController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('unique_id', 'like', "%{$search}%")
+                    ->orWhere('batch_id', 'like', "%{$search}%")
                     ->orWhere('customer_full_name', 'like', "%{$search}%")
                     ->orWhere('customer_email', 'like', "%{$search}%")
                     ->orWhere('product_name', 'like', "%{$search}%");
@@ -65,18 +66,85 @@ class OrderController extends Controller
         $sortOrder = $request->get('sort_order', 'desc');
         $query->orderBy($sortBy, $sortOrder);
 
-        // Paginate results
-        $orders = $query->paginate(15);
+        // Get all filtered orders
+        $allOrders = $query->get();
+        
+        // Group orders by batch_id (or individual orders if no batch_id)
+        $groupedOrders = [];
+        $processedBatchIds = [];
+        
+        foreach ($allOrders as $order) {
+            if ($order->batch_id && !in_array($order->batch_id, $processedBatchIds)) {
+                // This is a multi-order - get all orders with same batch_id
+                $batchOrders = $allOrders->where('batch_id', $order->batch_id)->values()->all();
+                $processedBatchIds[] = $order->batch_id;
+                
+                // Create a grouped order representation
+                $groupedOrders[] = [
+                    'id' => $order->id,
+                    'is_batch' => true,
+                    'batch_id' => $order->batch_id,
+                    'unique_id' => $order->batch_id,
+                    'customer_full_name' => $order->customer_full_name,
+                    'customer_email' => $order->customer_email,
+                    'customer_phone' => $order->customer_phone,
+                    'customer_address' => $order->customer_address,
+                    'customer_city' => $order->customer_city,
+                    'customer_country' => $order->customer_country,
+                    'status' => $order->status,
+                    'payment_method' => $order->payment_method,
+                    'created_at' => $order->created_at,
+                    'updated_at' => $order->updated_at,
+                    'total_amount' => collect($batchOrders)->sum('total_amount'),
+                    'orders' => $batchOrders,
+                ];
+            } elseif (!$order->batch_id) {
+                // Single order without batch
+                $groupedOrders[] = [
+                    'id' => $order->id,
+                    'is_batch' => false,
+                    'batch_id' => null,
+                    'unique_id' => $order->unique_id,
+                    'customer_full_name' => $order->customer_full_name,
+                    'customer_email' => $order->customer_email,
+                    'customer_phone' => $order->customer_phone,
+                    'customer_address' => $order->customer_address,
+                    'customer_city' => $order->customer_city,
+                    'customer_country' => $order->customer_country,
+                    'product_id' => $order->product_id,
+                    'product_name' => $order->product_name,
+                    'product_price' => $order->product_price,
+                    'product_image' => $order->product_image,
+                    'product_size' => $order->product_size,
+                    'product_color' => $order->product_color,
+                    'quantity' => $order->quantity,
+                    'total_amount' => $order->total_amount,
+                    'status' => $order->status,
+                    'payment_method' => $order->payment_method,
+                    'notes' => $order->notes,
+                    'created_at' => $order->created_at,
+                    'updated_at' => $order->updated_at,
+                    'product' => $order->product,
+                ];
+            }
+        }
+        
+        // Manually paginate the grouped results
+        $perPage = 15;
+        $currentPage = $request->get('page', 1);
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedOrders = array_slice($groupedOrders, $offset, $perPage);
+        $totalOrders = count($groupedOrders);
 
         return Inertia::render('admin/orders/index', [
-            'orders' => $orders->items(),
+            'orders' => $paginatedOrders,
             'pagination' => [
-                'current_page' => $orders->currentPage(),
-                'last_page' => $orders->lastPage(),
-                'per_page' => $orders->perPage(),
-                'total' => $orders->total(),
-                'from' => $orders->firstItem(),
-                'to' => $orders->lastItem(),
+                'current_page' => $currentPage,
+                'last_page' => ceil($totalOrders / $perPage),
+                'per_page' => $perPage,
+                'total' => $totalOrders,
+                'from' => $offset + 1,
+                'to' => min($offset + $perPage, $totalOrders),
             ],
             'filters' => $request->only(['search', 'status', 'country', 'payment_method', 'date_from', 'date_to', 'sort_by', 'sort_order']),
         ]);
@@ -181,7 +249,11 @@ class OrderController extends Controller
             // Resolve and normalize product image (prefer medialibrary URL, then product.image)
             $productImage = ImageUrlNormalizer::fromProduct($product);
 
+            // Generate or reuse batch_id for multi-orders
+            $batchId = $request->batch_id ?? null;
+            
             $order = Order::create([
+                'batch_id' => $batchId,
                 'customer_full_name' => $request->customer_full_name,
                 'customer_email' => $request->customer_email,
                 'customer_phone' => $request->customer_phone,
@@ -202,24 +274,54 @@ class OrderController extends Controller
 
             DB::commit();
 
-            // Send email notifications
-            try {
-                // Send confirmation email to customer
-                Mail::to($order->customer_email)->send(new OrderPlaced($order));
+            // Check if this is part of a multi-order batch
+            // Look for recent orders from same customer (within last 10 seconds)
+            $recentOrders = Order::where('customer_email', $order->customer_email)
+                ->where('created_at', '>=', now()->subSeconds(10))
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            // Only send emails if this is the last order or if it's been more than 3 seconds since last order
+            $shouldSendEmails = true;
+            $isMultiOrder = $recentOrders->count() > 1;
+            
+            // Flag this order to prevent duplicate emails if more orders come quickly
+            cache()->put("order_batch_{$order->customer_email}", $order->id, now()->addSeconds(5));
+
+            // Delay email sending to allow batching (wait 3 seconds for potential additional orders)
+            if ($request->has('is_batch_order') && $request->is_batch_order) {
+                $shouldSendEmails = false;
                 
-                // Send notification email to admin
-                Mail::to('and.shoes22@gmail.com')->send(new OrderNotificationAdmin($order));
-                
-                Log::info('Order emails sent successfully', [
-                    'order_id' => $order->id,
-                    'customer_email' => $order->customer_email,
-                ]);
-            } catch (\Exception $emailException) {
-                // Log email error but don't fail the order
-                Log::error('Failed to send order emails: ' . $emailException->getMessage(), [
-                    'order_id' => $order->id,
-                    'trace' => $emailException->getTraceAsString(),
-                ]);
+                // Schedule email check after delay
+                dispatch(function() use ($order) {
+                    $this->sendBatchedEmails($order);
+                })->delay(now()->addSeconds(3));
+            }
+
+            if ($shouldSendEmails && !$request->has('is_batch_order')) {
+                try {
+                    if ($isMultiOrder) {
+                        // Send multi-order email with all related orders
+                        $totalAmount = $recentOrders->sum('total_amount');
+                        Mail::to($order->customer_email)->send(new \App\Mail\MultiOrderPlaced($recentOrders, $totalAmount));
+                        Mail::to('and.shoes22@gmail.com')->send(new \App\Mail\MultiOrderNotificationAdmin($recentOrders, $totalAmount));
+                    } else {
+                        // Send single order email
+                        Mail::to($order->customer_email)->send(new OrderPlaced($order));
+                        Mail::to('and.shoes22@gmail.com')->send(new OrderNotificationAdmin($order));
+                    }
+                    
+                    Log::info('Order emails sent successfully', [
+                        'order_id' => $order->id,
+                        'is_multi_order' => $isMultiOrder,
+                        'customer_email' => $order->customer_email,
+                    ]);
+                } catch (\Exception $emailException) {
+                    Log::error('Failed to send order emails: ' . $emailException->getMessage(), [
+                        'order_id' => $order->id,
+                        'trace' => $emailException->getTraceAsString(),
+                    ]);
+                }
             }
 
             return response()->json([
@@ -373,5 +475,43 @@ class OrderController extends Controller
         return Inertia::render('order/success', [
             'order' => $order,
         ]);
+    }
+
+    /**
+     * Send batched emails for multiple orders from same customer
+     */
+    private function sendBatchedEmails($order)
+    {
+        try {
+            // Get all recent orders from this customer (within last 5 seconds)
+            $recentOrders = Order::where('customer_email', $order->customer_email)
+                ->where('created_at', '>=', now()->subSeconds(5))
+                ->get();
+
+            if ($recentOrders->count() > 1) {
+                // Multiple orders - send grouped email
+                $totalAmount = $recentOrders->sum('total_amount');
+                Mail::to($order->customer_email)->send(new \App\Mail\MultiOrderPlaced($recentOrders, $totalAmount));
+                Mail::to('and.shoes22@gmail.com')->send(new \App\Mail\MultiOrderNotificationAdmin($recentOrders, $totalAmount));
+                
+                Log::info('Batched order emails sent', [
+                    'order_count' => $recentOrders->count(),
+                    'customer_email' => $order->customer_email,
+                ]);
+            } else {
+                // Single order - send regular email
+                Mail::to($order->customer_email)->send(new OrderPlaced($order));
+                Mail::to('and.shoes22@gmail.com')->send(new OrderNotificationAdmin($order));
+                
+                Log::info('Single order email sent', [
+                    'order_id' => $order->id,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send batched emails: ' . $e->getMessage(), [
+                'order_id' => $order->id,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 }

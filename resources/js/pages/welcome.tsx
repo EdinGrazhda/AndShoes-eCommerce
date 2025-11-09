@@ -7,10 +7,11 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { BannerCarousel } from '../components/BannerCarousel';
 import { CartDrawer } from '../components/CartDrawer';
-import { CheckoutModal } from '../components/CheckoutModal';
+import { CheckoutModal } from '../components/CheckoutModalSimple';
 import { FilterSidebar } from '../components/FilterSidebar';
 import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
+import { MultiOrderSuccessModal } from '../components/MultiOrderSuccessModal';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
 import { ProductGrid } from '../components/ProductGrid';
 import { QuickView } from '../components/QuickView';
@@ -178,11 +179,15 @@ function StorefrontContent({
 
     const {
         isOpen: isCheckoutOpen,
-        product: checkoutProduct,
+        items: checkoutItems,
         closeCheckout,
         isSuccessOpen,
         successOrder,
         closeSuccess,
+        isMultiSuccessOpen,
+        successOrders,
+        totalAmount,
+        closeMultiSuccess,
     } = useCheckoutStore();
 
     // Update filters when debounced search changes
@@ -389,11 +394,10 @@ function StorefrontContent({
             />
 
             {/* Checkout Modal */}
-            {checkoutProduct && (
+            {checkoutItems.length > 0 && (
                 <CheckoutModal
                     isOpen={isCheckoutOpen}
                     onClose={closeCheckout}
-                    product={checkoutProduct}
                 />
             )}
 
@@ -403,6 +407,16 @@ function StorefrontContent({
                     isOpen={isSuccessOpen}
                     onClose={closeSuccess}
                     order={successOrder}
+                />
+            )}
+
+            {/* Multi-Order Success Modal */}
+            {successOrders.length > 0 && (
+                <MultiOrderSuccessModal
+                    isOpen={isMultiSuccessOpen}
+                    onClose={closeMultiSuccess}
+                    orders={successOrders}
+                    totalAmount={totalAmount}
                 />
             )}
         </div>
