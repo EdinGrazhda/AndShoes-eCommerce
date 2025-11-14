@@ -11,8 +11,9 @@
         /*
         * The maximum file size of an item in bytes.
         * Adding a larger file will result in an exception.
+        * Increased to 25MB to handle 2K and 4K images.
         */
-        'max_file_size' => 1024 * 1024 * 10, // 10MB
+        'max_file_size' => 1024 * 1024 * 25, // 25MB
 
         /*
         * This queue connection will be used to generate derived and responsive images.

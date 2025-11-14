@@ -1,6 +1,7 @@
 # Quick Summary: Image Conversion Fix
 
 ## What Was Wrong
+
 - Images uploaded on production didn't generate thumbnails/previews
 - Conversions folders were empty
 - 403 errors when viewing product images
@@ -8,18 +9,23 @@
 ## What Changed
 
 ### 1. `config/media-library.php`
+
 Changed conversions from queued to immediate:
+
 - `queue_conversions_by_default` → **false**
 - `queue_conversions_after_database_commit` → **false**
 
 ### 2. `app/Models/Product.php`
+
 Added `->nonQueued()` to both conversions:
+
 ```php
 ->addMediaConversion('thumb')->nonQueued()
 ->addMediaConversion('preview')->nonQueued()
 ```
 
 ### 3. `app/Console/Commands/RegenerateMediaConversions.php`
+
 Enhanced command to support Products and use Spatie's built-in regeneration.
 
 ## What To Do Now
@@ -41,12 +47,14 @@ php artisan media-library:regenerate --only-missing
 ```
 
 ### Expected Result:
+
 - ✅ New images will generate conversions immediately on upload
 - ✅ Conversions folder will have thumb and preview versions
 - ✅ Images will display correctly on storefront
 - ✅ No more 403 errors
 
 ### Verify Fix:
+
 ```bash
 # Check conversions were created:
 ls -la storage/app/public/*/conversions/

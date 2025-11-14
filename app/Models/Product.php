@@ -84,17 +84,42 @@ class Product extends Model implements HasMedia
             ->useFallbackUrl('/images/placeholder.jpg')
             ->useFallbackPath(public_path('/images/placeholder.jpg'))
             ->registerMediaConversions(function (Media $media) {
+                // Thumbnail for admin lists (150x150)
                 $this->addMediaConversion('thumb')
                     ->width(150)
                     ->height(150)
                     ->sharpen(10)
-                    ->nonQueued(); // Generate immediately, don't queue
+                    ->format('webp')
+                    ->quality(85)
+                    ->nonQueued();
 
+                // Preview for product cards (400x400)
                 $this->addMediaConversion('preview')
                     ->width(400)
                     ->height(400)
                     ->sharpen(10)
-                    ->nonQueued(); // Generate immediately, don't queue
+                    ->format('webp')
+                    ->quality(85)
+                    ->nonQueued();
+
+                // Medium for product details (800x800)
+                $this->addMediaConversion('medium')
+                    ->width(800)
+                    ->height(800)
+                    ->sharpen(10)
+                    ->format('webp')
+                    ->quality(88)
+                    ->nonQueued();
+
+                // Optimized full-size for high-quality display (1920x1920 max)
+                // This handles 2K/4K images by resizing them to manageable size
+                $this->addMediaConversion('optimized')
+                    ->width(1920)
+                    ->height(1920)
+                    ->keepOriginalImageFormat()
+                    ->sharpen(10)
+                    ->quality(90)
+                    ->nonQueued();
             });
     }
     
