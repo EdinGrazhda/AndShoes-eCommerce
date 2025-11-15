@@ -81,14 +81,14 @@ class Product extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('images')
-            ->useFallbackUrl('/images/placeholder.jpg')
-            ->useFallbackPath(public_path('/images/placeholder.jpg'))
+            ->useFallbackUrl('/images/default-campaign.jpg')
+            ->useFallbackPath(public_path('/images/default-campaign.jpg'))
             ->registerMediaConversions(function (Media $media) {
                 // Thumbnail for admin lists (150x150)
                 $this->addMediaConversion('thumb')
                     ->width(150)
                     ->height(150)
-                    ->sharpen(10)
+                    ->sharpen(5)
                     ->format('webp')
                     ->quality(85)
                     ->nonQueued();
@@ -97,18 +97,18 @@ class Product extends Model implements HasMedia
                 $this->addMediaConversion('preview')
                     ->width(400)
                     ->height(400)
-                    ->sharpen(10)
+                    ->sharpen(3)
                     ->format('webp')
-                    ->quality(85)
+                    ->quality(98)
                     ->nonQueued();
 
-                // Medium for product details (800x800)
+                // Medium for product details and welcome page (HD 1920x1080)
                 $this->addMediaConversion('medium')
-                    ->width(800)
-                    ->height(800)
-                    ->sharpen(10)
+                    ->width(1920)
+                    ->height(1080)
+                    ->sharpen(3)
                     ->format('webp')
-                    ->quality(88)
+                    ->quality(98)
                     ->nonQueued();
 
                 // Optimized full-size for high-quality display (1920x1920 max)
@@ -116,13 +116,13 @@ class Product extends Model implements HasMedia
                 $this->addMediaConversion('optimized')
                     ->width(1920)
                     ->height(1920)
-                    ->keepOriginalImageFormat()
-                    ->sharpen(10)
-                    ->quality(90)
+                    ->format('webp')
+                    ->sharpen(0)
+                    ->quality(98)
                     ->nonQueued();
             });
     }
-    
+
     /**
      * Get all product images URLs
      */
@@ -138,20 +138,18 @@ class Product extends Model implements HasMedia
         })->toArray();
     }
 
-
-
     /**
      * Get the product's image URL (for backward compatibility)
      */
     public function getImageUrlAttribute()
     {
-        // If using media library, get first image
+        // If using media library, get first image - use optimized for best quality
         if ($this->hasMedia('images')) {
-            return $this->getFirstMediaUrl('images', 'preview');
+            return $this->getFirstMediaUrl('images', 'optimized');
         }
 
-        // Fallback to old image column
-        return $this->image ?? '/images/placeholder.jpg';
+        // Fallback to default campaign image
+        return $this->image ?? '/images/default-campaign.jpg';
     }
 
     public function category()
