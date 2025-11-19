@@ -131,7 +131,8 @@ class Product extends Model implements HasMedia
         return $this->getMedia('images')->map(function ($media) {
             return [
                 'id' => $media->id,
-                'url' => $media->getUrl('preview'),
+                'url' => $media->getUrl('optimized'), // High quality for modals
+                'preview' => $media->getUrl('preview'), // Medium quality for cards
                 'thumb' => $media->getUrl('thumb'),
                 'original' => $media->getUrl(),
             ];
