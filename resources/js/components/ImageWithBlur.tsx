@@ -29,7 +29,7 @@ export function ImageWithBlur({
     useEffect(() => {
         // Reset loaded state when src changes
         setIsLoaded(false);
-        
+
         // Preload the image
         const img = new Image();
         img.src = src;
@@ -45,7 +45,7 @@ export function ImageWithBlur({
     }, [src, onLoad]);
 
     return (
-        <div className="relative w-full h-full">
+        <div className="relative h-full w-full">
             {/* Blur placeholder - always visible */}
             <div
                 className={`absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 transition-opacity duration-300 ${
@@ -53,7 +53,7 @@ export function ImageWithBlur({
                 }`}
                 aria-hidden="true"
             />
-            
+
             {/* Actual image */}
             <img
                 src={currentSrc}

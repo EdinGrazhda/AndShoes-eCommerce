@@ -1,5 +1,5 @@
 import { Minus, Plus, ShoppingCart, Star, X } from 'lucide-react';
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useCartStore } from '../store/cartStore';
 import type { Product } from '../types/store';
@@ -17,7 +17,29 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
     const [quantity, setQuantity] = useState(1);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [isImageLoading, setIsImageLoading] = useState(false);
     const addItem = useCartStore((state) => state.addItem);
+
+    // Preload next/previous images for smoother transitions
+    useEffect(() => {
+        if (!product || !(product as any).all_images) return;
+
+        const images = (product as any).all_images;
+        const preloadImage = (index: number) => {
+            if (images[index]) {
+                const img = new Image();
+                img.src = images[index].preview; // Preload preview size
+            }
+        };
+
+        // Preload next and previous images
+        if (selectedImageIndex < images.length - 1) {
+            preloadImage(selectedImageIndex + 1);
+        }
+        if (selectedImageIndex > 0) {
+            preloadImage(selectedImageIndex - 1);
+        }
+    }, [selectedImageIndex, product]);
 
     const handleBackdropClick = useCallback(
         (e: React.MouseEvent) => {
@@ -132,15 +154,40 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                     {/* Image Gallery */}
                     <div className="space-y-3">
                         {/* Main Image */}
-                        <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
+                        <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100">
+                            {isImageLoading && (
+                                <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100">
+                                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-[#771E49]"></div>
+                                </div>
+                            )}
                             <img
                                 src={
                                     (product as any).all_images?.[
                                         selectedImageIndex
-                                    ]?.url || product.image
+                                    ]?.url ||
+                                    (product as any).all_images?.[
+                                        selectedImageIndex
+                                    ]?.preview ||
+                                    product.image
                                 }
+                                srcSet={
+                                    (product as any).all_images?.[
+                                        selectedImageIndex
+                                    ]
+                                        ? `${(product as any).all_images[selectedImageIndex].preview} 400w, 
+                                           ${(product as any).all_images[selectedImageIndex].url || (product as any).all_images[selectedImageIndex].preview} 1200w`
+                                        : undefined
+                                }
+                                sizes="(max-width: 768px) 100vw, 50vw"
                                 alt={product.name}
-                                className="h-full w-full object-cover"
+                                className={`h-full w-full object-cover transition-opacity duration-200 ${
+                                    isImageLoading ? 'opacity-0' : 'opacity-100'
+                                }`}
+                                loading="eager"
+                                decoding="async"
+                                onLoadStart={() => setIsImageLoading(true)}
+                                onLoad={() => setIsImageLoading(false)}
+                                onError={() => setIsImageLoading(false)}
                             />
                         </div>
 
@@ -151,9 +198,10 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                     (img: any, index: number) => (
                                         <button
                                             key={img.id}
-                                            onClick={() =>
-                                                setSelectedImageIndex(index)
-                                            }
+                                            onClick={() => {
+                                                setIsImageLoading(true);
+                                                setSelectedImageIndex(index);
+                                            }}
                                             className={`aspect-square overflow-hidden rounded-lg border-2 transition-all ${
                                                 selectedImageIndex === index
                                                     ? 'border-[#771E49] ring-2 ring-[#771E49]/20'
@@ -161,9 +209,11 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                             }`}
                                         >
                                             <img
-                                                src={img.thumb}
+                                                src={img.preview || img.thumb}
                                                 alt={`${product.name} view ${index + 1}`}
                                                 className="h-full w-full object-cover"
+                                                loading="lazy"
+                                                decoding="async"
                                             />
                                         </button>
                                     ),

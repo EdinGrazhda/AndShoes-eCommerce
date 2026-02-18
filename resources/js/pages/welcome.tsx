@@ -198,7 +198,7 @@ function StorefrontContent({
     useEffect(() => {
         // Get first 8 product images from initial data
         const firstImages: string[] = [];
-        
+
         // Add campaign images first
         if (ssrCampaigns && Array.isArray(ssrCampaigns)) {
             ssrCampaigns.slice(0, 3).forEach((campaign: any) => {
@@ -207,7 +207,7 @@ function StorefrontContent({
                 }
             });
         }
-        
+
         // Add regular product images
         if (initialProducts?.data && Array.isArray(initialProducts.data)) {
             const remaining = 8 - firstImages.length;
@@ -217,7 +217,7 @@ function StorefrontContent({
                 }
             });
         }
-        
+
         // Preload immediately
         if (firstImages.length > 0 && typeof window !== 'undefined') {
             firstImages.forEach((url) => {

@@ -20,24 +20,26 @@ class ImageCache {
 
     init() {
         if (this.isInitialized) return;
-        
+
         try {
             const stored = localStorage.getItem(CACHE_KEY);
             if (stored) {
                 const parsed = JSON.parse(stored);
                 const now = Date.now();
-                
+
                 // Filter out expired entries
-                Object.entries(parsed).forEach(([url, entry]: [string, any]) => {
-                    if (now - entry.timestamp < CACHE_EXPIRY) {
-                        this.cache.set(url, entry);
-                    }
-                });
+                Object.entries(parsed).forEach(
+                    ([url, entry]: [string, any]) => {
+                        if (now - entry.timestamp < CACHE_EXPIRY) {
+                            this.cache.set(url, entry);
+                        }
+                    },
+                );
             }
         } catch (error) {
             console.warn('Failed to load image cache:', error);
         }
-        
+
         this.isInitialized = true;
     }
 
@@ -77,15 +79,15 @@ class ImageCache {
         urls.forEach((url, index) => {
             if (!this.cache.has(url)) {
                 const img = new Image();
-                
+
                 // For priority images, set high priority
                 if (priority) {
                     (img as any).fetchPriority = 'high';
                 }
-                
+
                 // Stagger non-priority preloads to avoid blocking
                 const delay = priority ? 0 : index * 50;
-                
+
                 setTimeout(() => {
                     img.src = url;
                     img.onload = () => this.set(url);
@@ -93,7 +95,7 @@ class ImageCache {
             }
         });
     }
-    
+
     /**
      * Aggressively preload images immediately (for first visit optimization)
      */
@@ -106,7 +108,7 @@ class ImageCache {
                 link.href = url;
                 (link as any).fetchPriority = 'high';
                 document.head.appendChild(link);
-                
+
                 // Also preload via Image for cache
                 const img = new Image();
                 (img as any).fetchPriority = 'high';
@@ -140,7 +142,7 @@ export function useImageCache(imageUrl: string, priority: boolean = false) {
 
         // Load image
         const img = new Image();
-        
+
         // Priority images load immediately, others load lazily
         if (priority) {
             img.fetchPriority = 'high';
@@ -175,7 +177,7 @@ export function useImagePreloader(imageUrls: string[]) {
         if (imageUrls.length === 0) return;
 
         imageCache.init();
-        
+
         // Preload in the background after a short delay
         const timer = setTimeout(() => {
             imageCache.preload(imageUrls);

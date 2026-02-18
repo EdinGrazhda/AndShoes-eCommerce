@@ -99,7 +99,7 @@ class Product extends Model implements HasMedia
                     ->height(400)
                     ->sharpen(3)
                     ->format('webp')
-                    ->quality(98)
+                    ->quality(90)
                     ->nonQueued();
 
                 // Medium for product details and welcome page (HD 1920x1080)
@@ -108,7 +108,7 @@ class Product extends Model implements HasMedia
                     ->height(1080)
                     ->sharpen(3)
                     ->format('webp')
-                    ->quality(98)
+                    ->quality(90)
                     ->nonQueued();
 
                 // Optimized full-size for high-quality display (1920x1920 max)
@@ -141,12 +141,13 @@ class Product extends Model implements HasMedia
 
     /**
      * Get the product's image URL (for backward compatibility)
+     * Uses medium size for better quality on product cards
      */
     public function getImageUrlAttribute()
     {
-        // If using media library, get first image - use optimized for best quality
+        // If using media library, get first image - use medium for better quality
         if ($this->hasMedia('images')) {
-            return $this->getFirstMediaUrl('images', 'optimized');
+            return $this->getFirstMediaUrl('images', 'medium');
         }
 
         // Fallback to default campaign image
