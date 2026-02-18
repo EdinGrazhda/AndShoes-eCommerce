@@ -23,9 +23,23 @@ class ProductsController extends Controller
             $query = Product::with(['category', 'sizeStocks']);
 
             // Apply filters
+
+            // Filter by database ID
+            if ($request->has('id') && ! empty($request->id)) {
+                $query->where('id', $request->id);
+            }
+
+            // Filter by custom product_id
+            if ($request->has('product_id') && ! empty($request->product_id)) {
+                $query->where('product_id', 'like', '%'.$request->product_id.'%');
+            }
+
             if ($request->has('search') && ! empty($request->search)) {
-                $query->where('name', 'like', '%'.$request->search.'%')
-                    ->orWhere('description', 'like', '%'.$request->search.'%');
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%'.$search.'%')
+                      ->orWhere('description', 'like', '%'.$search.'%');
+                });
             }
 
             if ($request->has('category') && ! empty($request->category)) {
@@ -41,7 +55,18 @@ class ProductsController extends Controller
             }
 
             if ($request->has('stock') && ! empty($request->stock)) {
-                $query->where('stock', $request->stock);
+                // Stock status is computed from product_size_stocks totals, not stored directly
+                // 0 = out of stock, 1-10 = low stock, 11+ = in stock
+                $stockFilter = $request->stock;
+                $sub = '(SELECT COALESCE(SUM(quantity), 0) FROM product_size_stocks WHERE product_id = products.id)';
+
+                if ($stockFilter === 'out of stock') {
+                    $query->whereRaw("$sub = 0");
+                } elseif ($stockFilter === 'low stock') {
+                    $query->whereRaw("$sub > 0 AND $sub <= 10");
+                } elseif ($stockFilter === 'in stock') {
+                    $query->whereRaw("$sub > 10");
+                }
             }
 
             if ($request->has('color') && ! empty($request->color)) {

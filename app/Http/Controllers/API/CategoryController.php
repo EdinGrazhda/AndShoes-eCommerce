@@ -22,8 +22,11 @@ class CategoryController extends Controller
 
             // Apply search filter
             if ($request->has('search') && ! empty($request->search)) {
-                $query->where('name', 'like', '%'.$request->search.'%')
-                    ->orWhere('description', 'like', '%'.$request->search.'%');
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%'.$search.'%')
+                      ->orWhere('description', 'like', '%'.$search.'%');
+                });
             }
 
             // Apply sorting
