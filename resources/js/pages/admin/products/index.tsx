@@ -6,13 +6,14 @@ import {
     Edit,
     Edit2,
     Filter,
+    Loader2,
     Package,
     Plus,
     Search,
     Trash2,
     X,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -79,21 +80,21 @@ interface ProductsPageProps {
 }
 
 export default function Products({
-    products = [],
+    products: initialProducts = [],
     categories = [],
     pagination,
     filters = {},
 }: ProductsPageProps) {
-    // Debug logging
-    console.log('Products component received:', {
-        products,
-        categories,
-        pagination,
-        filters,
-        productsLength: products.length,
-        productsType: typeof products,
-        productsIsArray: Array.isArray(products),
-    });
+    // Accumulated products for infinite scroll
+    const [allProducts, setAllProducts] = useState<Product[]>(initialProducts);
+    const [currentPage, setCurrentPage] = useState(
+        pagination?.current_page || 1,
+    );
+    const [lastPage, setLastPage] = useState(pagination?.last_page || 1);
+    const [totalProducts, setTotalProducts] = useState(
+        pagination?.total || initialProducts.length,
+    );
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
 
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [selectedCategory, setSelectedCategory] = useState(
@@ -115,8 +116,19 @@ export default function Products({
     );
     const [isLoading, setIsLoading] = useState(false);
 
-    // Real-time filtering with debounce
-    const getCurrentFilters = useCallback(() => {
+    const isInitialMount = useRef(true);
+    const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+    // When Inertia delivers new props (filters changed), reset accumulated products
+    useEffect(() => {
+        setAllProducts(initialProducts);
+        setCurrentPage(pagination?.current_page || 1);
+        setLastPage(pagination?.last_page || 1);
+        setTotalProducts(pagination?.total || initialProducts.length);
+    }, [initialProducts, pagination]);
+
+    // Build filter params
+    const getFilterParams = useCallback(() => {
         const filterParams: any = {};
         if (searchTerm) filterParams.search = searchTerm;
         if (selectedCategory) filterParams.category = selectedCategory;
@@ -134,21 +146,87 @@ export default function Products({
         selectedProductId,
     ]);
 
-    const applyFilters = useCallback(() => {
-        router.get('/admin/products', getCurrentFilters(), {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    }, [getCurrentFilters]);
+    // Alias for backward compatibility
+    const getCurrentFilters = getFilterParams;
 
-    // Debounced filtering effect
+    // Load next page via fetch and append products
+    const loadMore = useCallback(async () => {
+        if (isLoadingMore || currentPage >= lastPage) return;
+
+        setIsLoadingMore(true);
+        const nextPage = currentPage + 1;
+        const params = new URLSearchParams(
+            getFilterParams() as Record<string, string>,
+        );
+        params.set('page', String(nextPage));
+
+        try {
+            const response = await fetch(`/api/products?${params.toString()}`, {
+                headers: { Accept: 'application/json' },
+            });
+            if (response.ok) {
+                const data = await response.json();
+                const newProducts: Product[] = data.data ?? [];
+                setAllProducts((prev) => {
+                    // Deduplicate by id
+                    const existingIds = new Set(prev.map((p) => p.id));
+                    const unique = newProducts.filter(
+                        (p) => !existingIds.has(p.id),
+                    );
+                    return [...prev, ...unique];
+                });
+                setCurrentPage(nextPage);
+                setLastPage(data.last_page ?? lastPage);
+                setTotalProducts(data.total ?? totalProducts);
+            }
+        } catch (err) {
+            console.error('Failed to load more products:', err);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    }, [isLoadingMore, currentPage, lastPage, getFilterParams, totalProducts]);
+
+    // IntersectionObserver for infinite scroll sentinel
     useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    loadMore();
+                }
+            },
+            { rootMargin: '200px' },
+        );
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [loadMore]);
+
+    // Debounced filtering — resets to page 1 via Inertia
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+
         const timeoutId = setTimeout(() => {
-            applyFilters();
-        }, 300); // 300ms debounce
+            router.get('/admin/products', getFilterParams(), {
+                preserveState: true,
+                preserveScroll: false,
+            });
+        }, 300);
 
         return () => clearTimeout(timeoutId);
-    }, [applyFilters]);
+    }, [
+        searchTerm,
+        selectedCategory,
+        selectedStock,
+        selectedColor,
+        selectedId,
+        selectedProductId,
+        getFilterParams,
+    ]);
 
     const clearFilters = () => {
         setSearchTerm('');
@@ -408,21 +486,18 @@ export default function Products({
                                         <Package className="h-4 w-4 text-white" />
                                     </div>
                                     <h3 className="text-base font-bold text-gray-900">
-                                        Product Inventory (
-                                        {pagination?.total || products.length}{' '}
+                                        Product Inventory ({totalProducts}{' '}
                                         items)
                                     </h3>
                                 </div>
                                 <div className="text-xs font-medium text-gray-600">
-                                    Showing {pagination?.from || 0} to{' '}
-                                    {pagination?.to || 0} of{' '}
-                                    {pagination?.total || products.length}{' '}
-                                    products
+                                    Showing {allProducts.length} of{' '}
+                                    {totalProducts} products
                                 </div>
                             </div>
                         </div>
 
-                        {products.length > 0 ? (
+                        {allProducts.length > 0 ? (
                             <>
                                 {/* Desktop Table View - Hidden on mobile */}
                                 <div className="hidden overflow-x-auto lg:block">
@@ -462,224 +537,226 @@ export default function Products({
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200 bg-white">
-                                            {products.map((product, index) => (
-                                                <tr
-                                                    key={product.id}
-                                                    className={`transition-all duration-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white hover:shadow-lg ${
-                                                        index % 2 === 0
-                                                            ? 'bg-white'
-                                                            : 'bg-gray-50/30'
-                                                    }`}
-                                                >
-                                                    {/* Database ID */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-xs font-semibold text-gray-500">
-                                                            #{product.id}
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Custom Product ID */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        {product.product_id ? (
-                                                            <div className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
-                                                                {
-                                                                    product.product_id
-                                                                }
+                                            {allProducts.map(
+                                                (product, index) => (
+                                                    <tr
+                                                        key={product.id}
+                                                        className={`transition-all duration-300 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white hover:shadow-lg ${
+                                                            index % 2 === 0
+                                                                ? 'bg-white'
+                                                                : 'bg-gray-50/30'
+                                                        }`}
+                                                    >
+                                                        {/* Database ID */}
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className="text-xs font-semibold text-gray-500">
+                                                                #{product.id}
                                                             </div>
-                                                        ) : (
-                                                            <span className="text-xs text-gray-400">
-                                                                Not set
-                                                            </span>
-                                                        )}
-                                                    </td>
+                                                        </td>
 
-                                                    {/* Product Info */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="flex items-center">
-                                                            {(product.image_url ||
-                                                                product.image) && (
-                                                                <div className="h-10 w-10 flex-shrink-0">
-                                                                    <img
-                                                                        className="h-10 w-10 rounded-lg object-cover"
-                                                                        src={
-                                                                            product.image_url ||
-                                                                            product.image ||
-                                                                            `https://picsum.photos/seed/${product.id}/80/80`
-                                                                        }
-                                                                        alt={
-                                                                            product.name
-                                                                        }
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            <div
-                                                                className={
-                                                                    product.image_url ||
-                                                                    product.image
-                                                                        ? 'ml-3'
-                                                                        : ''
-                                                                }
-                                                            >
-                                                                <div className="text-xs font-medium text-gray-900">
+                                                        {/* Custom Product ID */}
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            {product.product_id ? (
+                                                                <div className="inline-flex items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800">
                                                                     {
-                                                                        product.name
+                                                                        product.product_id
                                                                     }
                                                                 </div>
-                                                                {product.description && (
-                                                                    <div className="max-w-xs truncate text-xs text-gray-500">
-                                                                        {
-                                                                            product.description
-                                                                        }
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Category */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        {product.category ? (
-                                                            <span className="inline-flex items-center rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-medium text-rose-800">
-                                                                {
-                                                                    product
-                                                                        .category
-                                                                        .name
-                                                                }
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-xs text-gray-400">
-                                                                No category
-                                                            </span>
-                                                        )}
-                                                    </td>
-
-                                                    {/* Price */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-xs font-semibold text-gray-900">
-                                                            ${product.price}
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Stock */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="flex flex-col gap-1">
-                                                            <span
-                                                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                                                    product.stock_status ===
-                                                                    'in stock'
-                                                                        ? 'bg-green-100 text-green-800'
-                                                                        : product.stock_status ===
-                                                                            'low stock'
-                                                                          ? 'bg-yellow-100 text-yellow-800'
-                                                                          : 'bg-red-100 text-red-800'
-                                                                }`}
-                                                            >
-                                                                {
-                                                                    product.stock_status
-                                                                }
-                                                            </span>
-                                                            <span className="text-xs text-gray-500">
-                                                                Qty:{' '}
-                                                                {product.stock_quantity ??
-                                                                    product.stock}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-
-                                                    {/* Color */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="flex items-center gap-2">
-                                                            {product.color && (
-                                                                <>
-                                                                    <div
-                                                                        className="h-4 w-4 rounded-full border-2 border-gray-300 shadow-sm"
-                                                                        style={{
-                                                                            backgroundColor:
-                                                                                product.color.toLowerCase(),
-                                                                        }}
-                                                                    ></div>
-                                                                    <span className="text-xs font-medium text-gray-700 capitalize">
-                                                                        {
-                                                                            product.color
-                                                                        }
-                                                                    </span>
-                                                                </>
-                                                            )}
-                                                            {!product.color && (
+                                                            ) : (
                                                                 <span className="text-xs text-gray-400">
-                                                                    No color
+                                                                    Not set
                                                                 </span>
                                                             )}
-                                                        </div>
-                                                    </td>
+                                                        </td>
 
-                                                    {/* Gender */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <span
-                                                            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                                                product.gender ===
+                                                        {/* Product Info */}
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className="flex items-center">
+                                                                {(product.image_url ||
+                                                                    product.image) && (
+                                                                    <div className="h-10 w-10 flex-shrink-0">
+                                                                        <img
+                                                                            className="h-10 w-10 rounded-lg object-cover"
+                                                                            src={
+                                                                                product.image_url ||
+                                                                                product.image ||
+                                                                                `https://picsum.photos/seed/${product.id}/80/80`
+                                                                            }
+                                                                            alt={
+                                                                                product.name
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                <div
+                                                                    className={
+                                                                        product.image_url ||
+                                                                        product.image
+                                                                            ? 'ml-3'
+                                                                            : ''
+                                                                    }
+                                                                >
+                                                                    <div className="text-xs font-medium text-gray-900">
+                                                                        {
+                                                                            product.name
+                                                                        }
+                                                                    </div>
+                                                                    {product.description && (
+                                                                        <div className="max-w-xs truncate text-xs text-gray-500">
+                                                                            {
+                                                                                product.description
+                                                                            }
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Category */}
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            {product.category ? (
+                                                                <span className="inline-flex items-center rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-medium text-rose-800">
+                                                                    {
+                                                                        product
+                                                                            .category
+                                                                            .name
+                                                                    }
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-xs text-gray-400">
+                                                                    No category
+                                                                </span>
+                                                            )}
+                                                        </td>
+
+                                                        {/* Price */}
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className="text-xs font-semibold text-gray-900">
+                                                                ${product.price}
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Stock */}
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className="flex flex-col gap-1">
+                                                                <span
+                                                                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                                                        product.stock_status ===
+                                                                        'in stock'
+                                                                            ? 'bg-green-100 text-green-800'
+                                                                            : product.stock_status ===
+                                                                                'low stock'
+                                                                              ? 'bg-yellow-100 text-yellow-800'
+                                                                              : 'bg-red-100 text-red-800'
+                                                                    }`}
+                                                                >
+                                                                    {
+                                                                        product.stock_status
+                                                                    }
+                                                                </span>
+                                                                <span className="text-xs text-gray-500">
+                                                                    Qty:{' '}
+                                                                    {product.stock_quantity ??
+                                                                        product.stock}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Color */}
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className="flex items-center gap-2">
+                                                                {product.color && (
+                                                                    <>
+                                                                        <div
+                                                                            className="h-4 w-4 rounded-full border-2 border-gray-300 shadow-sm"
+                                                                            style={{
+                                                                                backgroundColor:
+                                                                                    product.color.toLowerCase(),
+                                                                            }}
+                                                                        ></div>
+                                                                        <span className="text-xs font-medium text-gray-700 capitalize">
+                                                                            {
+                                                                                product.color
+                                                                            }
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                                {!product.color && (
+                                                                    <span className="text-xs text-gray-400">
+                                                                        No color
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+
+                                                        {/* Gender */}
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <span
+                                                                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                                                    product.gender ===
+                                                                    'male'
+                                                                        ? 'bg-blue-100 text-blue-800'
+                                                                        : product.gender ===
+                                                                            'female'
+                                                                          ? 'bg-pink-100 text-pink-800'
+                                                                          : 'bg-gray-100 text-gray-800'
+                                                                }`}
+                                                            >
+                                                                {product.gender ===
                                                                 'male'
-                                                                    ? 'bg-blue-100 text-blue-800'
+                                                                    ? 'Male'
                                                                     : product.gender ===
                                                                         'female'
-                                                                      ? 'bg-pink-100 text-pink-800'
-                                                                      : 'bg-gray-100 text-gray-800'
-                                                            }`}
-                                                        >
-                                                            {product.gender ===
-                                                            'male'
-                                                                ? 'Male'
-                                                                : product.gender ===
-                                                                    'female'
-                                                                  ? 'Female'
-                                                                  : 'Unisex'}
-                                                        </span>
-                                                    </td>
+                                                                      ? 'Female'
+                                                                      : 'Unisex'}
+                                                            </span>
+                                                        </td>
 
-                                                    {/* Sizes */}
-                                                    <td className="px-4 py-3 whitespace-nowrap">
-                                                        <div className="text-xs font-medium text-gray-600">
-                                                            {product.foot_numbers ||
-                                                                'N/A'}
-                                                        </div>
-                                                    </td>
+                                                        {/* Sizes */}
+                                                        <td className="px-4 py-3 whitespace-nowrap">
+                                                            <div className="text-xs font-medium text-gray-600">
+                                                                {product.foot_numbers ||
+                                                                    'N/A'}
+                                                            </div>
+                                                        </td>
 
-                                                    {/* Actions */}
-                                                    <td className="w-48 px-4 py-3 pr-6 whitespace-nowrap">
-                                                        <div className="flex items-center justify-end gap-2">
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleEditProduct(
-                                                                        product,
-                                                                    )
-                                                                }
-                                                                className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-3 py-2 text-xs font-semibold text-rose-700 transition-all duration-200 hover:scale-105 hover:border-rose-300 hover:from-rose-100 hover:to-pink-100 focus:ring-4 focus:ring-rose-200 focus:outline-none"
-                                                            >
-                                                                <Edit className="h-3.5 w-3.5" />
-                                                                Edit
-                                                            </button>
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleDeleteProduct(
-                                                                        product,
-                                                                    )
-                                                                }
-                                                                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-rose-600 hover:to-pink-700 focus:ring-4 focus:ring-rose-300 focus:outline-none"
-                                                            >
-                                                                <Trash2 className="h-3.5 w-3.5" />
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                        {/* Actions */}
+                                                        <td className="w-48 px-4 py-3 pr-6 whitespace-nowrap">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleEditProduct(
+                                                                            product,
+                                                                        )
+                                                                    }
+                                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-gradient-to-r from-rose-50 to-pink-50 px-3 py-2 text-xs font-semibold text-rose-700 transition-all duration-200 hover:scale-105 hover:border-rose-300 hover:from-rose-100 hover:to-pink-100 focus:ring-4 focus:ring-rose-200 focus:outline-none"
+                                                                >
+                                                                    <Edit className="h-3.5 w-3.5" />
+                                                                    Edit
+                                                                </button>
+                                                                <button
+                                                                    onClick={() =>
+                                                                        handleDeleteProduct(
+                                                                            product,
+                                                                        )
+                                                                    }
+                                                                    className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 px-3 py-2 text-xs font-semibold text-white transition-all duration-200 hover:scale-105 hover:from-rose-600 hover:to-pink-700 focus:ring-4 focus:ring-rose-300 focus:outline-none"
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                    Delete
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
 
                                 {/* Mobile Card View - Visible on mobile only */}
                                 <div className="grid gap-6 p-6 lg:hidden">
-                                    {products.map((product) => (
+                                    {allProducts.map((product) => (
                                         <div
                                             key={product.id}
                                             className="overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-white to-gray-50 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
@@ -908,82 +985,20 @@ export default function Products({
                             </div>
                         )}
 
-                        {/* Pagination */}
-                        {pagination && pagination.last_page > 1 && (
-                            <div className="border-t border-gray-200 bg-gray-50 px-6 py-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="text-xs font-medium text-gray-700">
-                                        Showing {pagination.from || 0} to{' '}
-                                        {pagination.to || 0} of{' '}
-                                        {pagination.total || 0} results
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        {pagination.current_page > 1 && (
-                                            <button
-                                                onClick={() =>
-                                                    router.get(
-                                                        '/admin/products',
-                                                        {
-                                                            ...getCurrentFilters(),
-                                                            page:
-                                                                pagination.current_page -
-                                                                1,
-                                                        },
-                                                    )
-                                                }
-                                                className="relative inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50"
-                                            >
-                                                Previous
-                                            </button>
-                                        )}
-
-                                        {Array.from(
-                                            { length: pagination.last_page },
-                                            (_, i) => i + 1,
-                                        ).map((page) => (
-                                            <button
-                                                key={page}
-                                                onClick={() =>
-                                                    router.get(
-                                                        '/admin/products',
-                                                        {
-                                                            ...getCurrentFilters(),
-                                                            page,
-                                                        },
-                                                    )
-                                                }
-                                                className={`relative inline-flex items-center rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
-                                                    page ===
-                                                    pagination.current_page
-                                                        ? 'scale-105 border-rose-500 bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg'
-                                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                                                }`}
-                                            >
-                                                {page}
-                                            </button>
-                                        ))}
-
-                                        {pagination.current_page <
-                                            pagination.last_page && (
-                                            <button
-                                                onClick={() =>
-                                                    router.get(
-                                                        '/admin/products',
-                                                        {
-                                                            ...getCurrentFilters(),
-                                                            page:
-                                                                pagination.current_page +
-                                                                1,
-                                                        },
-                                                    )
-                                                }
-                                                className="relative inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50"
-                                            >
-                                                Next
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
+                        {/* Infinite scroll sentinel & loader */}
+                        <div ref={sentinelRef} className="h-1" />
+                        {isLoadingMore && (
+                            <div className="flex items-center justify-center gap-2 border-t border-gray-200 bg-gray-50 px-6 py-4">
+                                <Loader2 className="h-5 w-5 animate-spin text-rose-500" />
+                                <span className="text-sm font-medium text-gray-600">
+                                    Loading more products...
+                                </span>
+                            </div>
+                        )}
+                        {currentPage >= lastPage && allProducts.length > 0 && (
+                            <div className="border-t border-gray-200 bg-gray-50 px-6 py-3 text-center text-xs font-medium text-gray-500">
+                                Showing all {allProducts.length} of{' '}
+                                {totalProducts} products
                             </div>
                         )}
                     </div>

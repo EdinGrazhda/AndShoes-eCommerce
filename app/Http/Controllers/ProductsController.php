@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Inertia\Inertia;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 
 class ProductsController extends Controller
 {
@@ -14,20 +13,20 @@ class ProductsController extends Controller
     public function index(Request $request)
     {
         // Get products from API controller
-        $apiController = new \App\Http\Controllers\API\ProductsController();
+        $apiController = new \App\Http\Controllers\API\ProductsController;
         $apiResponse = $apiController->index($request);
         $apiData = json_decode($apiResponse->getContent(), true);
 
         // Get categories for filters
-        $categoryController = new \App\Http\Controllers\API\CategoryController();
-        $categoryResponse = $categoryController->index(new Request());
+        $categoryController = new \App\Http\Controllers\API\CategoryController;
+        $categoryResponse = $categoryController->index(new Request);
         $categoryData = json_decode($categoryResponse->getContent(), true);
 
         // Extract the actual data from the API response
         // Since API now returns Laravel pagination object directly
         $products = [];
         $pagination = null;
-        
+
         if (isset($apiData['data'])) {
             // Paginated data - Laravel pagination format
             $products = $apiData['data'];
@@ -37,7 +36,7 @@ class ProductsController extends Controller
                 'per_page' => $apiData['per_page'] ?? 20,
                 'total' => $apiData['total'] ?? 0,
                 'from' => $apiData['from'],
-                'to' => $apiData['to']
+                'to' => $apiData['to'],
             ];
         }
 
@@ -50,7 +49,7 @@ class ProductsController extends Controller
             'products' => $products,
             'categories' => $categories,
             'pagination' => $pagination,
-            'filters' => $request->only(['search', 'category', 'price_min', 'price_max', 'stock', 'color', 'foot_numbers', 'sort_by', 'sort_order', 'id', 'product_id'])
+            'filters' => $request->only(['search', 'category', 'price_min', 'price_max', 'stock', 'color', 'foot_numbers', 'sort_by', 'sort_order', 'id', 'product_id']),
         ]);
     }
 
