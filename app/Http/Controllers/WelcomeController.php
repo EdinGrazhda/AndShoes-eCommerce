@@ -111,11 +111,30 @@ class WelcomeController extends Controller
             ->where('end_date', '>=', now())
             ->get();
 
+        // Collect first 6 image URLs for preloading in HTML head
+        // This makes images load instantly on first visit
+        $preloadImages = [];
+        
+        // Add campaign images first (they appear first on page)
+        foreach ($campaigns->take(3) as $campaign) {
+            if ($campaign->product && $campaign->product->image_url) {
+                $preloadImages[] = $campaign->product->image_url;
+            }
+        }
+        
+        // Fill remaining slots with regular products
+        $remainingSlots = 6 - count($preloadImages);
+        foreach ($products->take($remainingSlots) as $product) {
+            if ($product->image_url) {
+                $preloadImages[] = $product->image_url;
+            }
+        }
+
         // Return Inertia response with SSR data
         return Inertia::render('welcome', [
             'initialProducts' => $products,
             'categories' => $categories,
             'campaigns' => $campaigns,
-        ]);
+        ])->with('preloadImages', $preloadImages);
     }
 }

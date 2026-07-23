@@ -1,5 +1,5 @@
 import { Minus, Plus, ShoppingCart, Star, X } from 'lucide-react';
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useCartStore } from '../store/cartStore';
 import type { Product } from '../types/store';
@@ -17,7 +17,29 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
     const [quantity, setQuantity] = useState(1);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [isImageLoading, setIsImageLoading] = useState(false);
     const addItem = useCartStore((state) => state.addItem);
+
+    // Preload next/previous images for smoother transitions
+    useEffect(() => {
+        if (!product || !(product as any).all_images) return;
+
+        const images = (product as any).all_images;
+        const preloadImage = (index: number) => {
+            if (images[index]) {
+                const img = new Image();
+                img.src = images[index].preview; // Preload preview size
+            }
+        };
+
+        // Preload next and previous images
+        if (selectedImageIndex < images.length - 1) {
+            preloadImage(selectedImageIndex + 1);
+        }
+        if (selectedImageIndex > 0) {
+            preloadImage(selectedImageIndex - 1);
+        }
+    }, [selectedImageIndex, product]);
 
     const handleBackdropClick = useCallback(
         (e: React.MouseEvent) => {
@@ -103,57 +125,83 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
 
     return (
         <div
-            className="fixed inset-0 z-50 flex animate-in items-center justify-center bg-black/60 p-4 duration-200 fade-in"
+            className="fixed inset-0 z-50 flex animate-in items-center justify-center bg-black/60 p-3 duration-200 fade-in sm:p-4"
             onClick={handleBackdropClick}
             role="dialog"
             aria-labelledby="quick-view-title"
             aria-modal="true"
         >
-            <div className="max-h-[90vh] w-full max-w-4xl animate-in overflow-y-auto rounded-xl bg-white shadow-2xl duration-300 zoom-in-95">
+            <div className="max-h-[92vh] w-full max-w-3xl animate-in overflow-y-auto rounded-2xl bg-white shadow-2xl duration-300 zoom-in-95">
                 {/* Header */}
-                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 py-3 backdrop-blur-sm">
                     <h2
                         id="quick-view-title"
-                        className="text-2xl font-bold text-gray-900"
+                        className="text-lg font-bold text-gray-900"
                     >
                         Quick View
                     </h2>
                     <button
                         onClick={onClose}
-                        className="rounded-lg p-2 transition-colors hover:bg-gray-100 focus:ring-2 focus:ring-[#771E49] focus:outline-none"
+                        className="rounded-full p-1.5 transition-colors hover:bg-gray-100 focus:ring-2 focus:ring-[#771E49] focus:outline-none"
                         aria-label="Close quick view"
                     >
-                        <X size={24} />
+                        <X size={20} />
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="grid gap-8 p-6 md:grid-cols-2">
+                <div className="grid gap-5 p-5 md:grid-cols-2">
                     {/* Image Gallery */}
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         {/* Main Image */}
-                        <div className="aspect-square overflow-hidden rounded-lg bg-gray-100">
+                        <div className="relative aspect-square overflow-hidden rounded-xl bg-gray-50">
+                            {isImageLoading && (
+                                <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-50">
+                                    <div className="h-7 w-7 animate-spin rounded-full border-3 border-gray-200 border-t-[#771E49]"></div>
+                                </div>
+                            )}
                             <img
                                 src={
                                     (product as any).all_images?.[
                                         selectedImageIndex
-                                    ]?.url || product.image
+                                    ]?.url ||
+                                    (product as any).all_images?.[
+                                        selectedImageIndex
+                                    ]?.preview ||
+                                    product.image
                                 }
+                                srcSet={
+                                    (product as any).all_images?.[
+                                        selectedImageIndex
+                                    ]
+                                        ? `${(product as any).all_images[selectedImageIndex].preview} 400w, 
+                                           ${(product as any).all_images[selectedImageIndex].url || (product as any).all_images[selectedImageIndex].preview} 1200w`
+                                        : undefined
+                                }
+                                sizes="(max-width: 768px) 100vw, 50vw"
                                 alt={product.name}
-                                className="h-full w-full object-cover"
+                                className={`h-full w-full object-cover transition-opacity duration-200 ${
+                                    isImageLoading ? 'opacity-0' : 'opacity-100'
+                                }`}
+                                loading="eager"
+                                decoding="async"
+                                onLoadStart={() => setIsImageLoading(true)}
+                                onLoad={() => setIsImageLoading(false)}
+                                onError={() => setIsImageLoading(false)}
                             />
                         </div>
 
                         {/* Thumbnail Gallery */}
                         {(product as any).all_images?.length > 1 && (
-                            <div className="grid grid-cols-4 gap-2">
+                            <div className="grid grid-cols-4 gap-1.5">
                                 {(product as any).all_images.map(
                                     (img: any, index: number) => (
                                         <button
                                             key={img.id}
-                                            onClick={() =>
-                                                setSelectedImageIndex(index)
-                                            }
+                                            onClick={() => {
+                                                setIsImageLoading(true);
+                                                setSelectedImageIndex(index);
+                                            }}
                                             className={`aspect-square overflow-hidden rounded-lg border-2 transition-all ${
                                                 selectedImageIndex === index
                                                     ? 'border-[#771E49] ring-2 ring-[#771E49]/20'
@@ -161,9 +209,11 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                             }`}
                                         >
                                             <img
-                                                src={img.thumb}
+                                                src={img.preview || img.thumb}
                                                 alt={`${product.name} view ${index + 1}`}
                                                 className="h-full w-full object-cover"
+                                                loading="lazy"
+                                                decoding="async"
                                             />
                                         </button>
                                     ),
@@ -175,21 +225,21 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                     {/* Details */}
                     <div className="flex flex-col">
                         {/* Title */}
-                        <h3 className="mb-4 text-3xl font-bold text-gray-900">
+                        <h3 className="text-2xl leading-tight font-bold text-gray-900">
                             {product.name}
                         </h3>
 
                         {/* Rating */}
                         {product.rating && (
                             <div
-                                className="mb-4 flex items-center gap-2"
+                                className="mt-2 flex items-center gap-1.5"
                                 aria-label={`Rating: ${product.rating} out of 5 stars`}
                             >
-                                <div className="flex gap-1">
+                                <div className="flex gap-0.5">
                                     {Array.from({ length: 5 }).map((_, i) => (
                                         <Star
                                             key={i}
-                                            size={20}
+                                            size={16}
                                             className={
                                                 i <
                                                 Math.floor(product.rating || 0)
@@ -200,46 +250,63 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                         />
                                     ))}
                                 </div>
-                                <span className="text-gray-600">
+                                <span className="text-sm text-gray-500">
                                     ({product.rating.toFixed(1)})
                                 </span>
                             </div>
                         )}
 
                         {/* Price */}
-                        <div className="mb-6 text-4xl font-bold text-[#771E49]">
+                        <div className="mt-3 text-3xl font-bold text-[#771E49]">
                             €{(product.price || 0).toFixed(2)}
                         </div>
 
                         {/* Description */}
-                        <p className="mb-6 leading-relaxed text-gray-600">
-                            {product.description}
-                        </p>
+                        {product.description && (
+                            <p className="mt-3 text-sm leading-relaxed text-gray-500">
+                                {product.description}
+                            </p>
+                        )}
 
-                        {/* Color */}
+                        {/* Divider */}
+                        <div className="my-4 border-t border-gray-100" />
+
+                        {/* Color with swatch */}
                         {product.color && (
-                            <div className="mb-6">
-                                <span className="mb-2 block text-sm font-semibold text-gray-700">
-                                    Color:
+                            <div className="mb-4">
+                                <span className="mb-1.5 block text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                    Color
                                 </span>
-                                <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-900">
-                                    {product.color}
-                                </span>
+                                <div className="inline-flex items-center gap-2.5 rounded-full border border-gray-200 bg-gray-50/80 px-3.5 py-1.5">
+                                    <span
+                                        className="h-5 w-5 shrink-0 rounded-full border border-gray-300 shadow-inner"
+                                        style={{
+                                            backgroundColor: product.color
+                                                .toLowerCase()
+                                                .split('/')[0]
+                                                .trim(),
+                                        }}
+                                        aria-hidden="true"
+                                    />
+                                    <span className="text-sm font-medium text-gray-800 capitalize">
+                                        {product.color}
+                                    </span>
+                                </div>
                             </div>
                         )}
 
                         {/* Categories */}
                         {product.categories &&
                             product.categories.length > 0 && (
-                                <div className="mb-6">
-                                    <span className="mb-2 block text-sm font-semibold text-gray-700">
-                                        Categories:
+                                <div className="mb-4">
+                                    <span className="mb-1.5 block text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                        Categories
                                     </span>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-1.5">
                                         {product.categories.map((category) => (
                                             <span
                                                 key={category.id}
-                                                className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+                                                className="rounded-full border border-[#771E49]/20 bg-[#771E49]/5 px-3 py-1 text-xs font-medium text-[#771E49]"
                                             >
                                                 {category.name}
                                             </span>
@@ -249,63 +316,64 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                             )}
 
                         {/* Stock Status */}
-                        <div className="mb-6">
+                        <div className="mb-4">
                             {isOutOfStock ? (
-                                <span className="font-semibold text-red-600">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-600">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                                     Out of Stock
                                 </span>
                             ) : product.stock === 'low stock' ? (
-                                <span className="font-semibold text-[#771E49]">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                                     Low Stock
                                 </span>
                             ) : (
-                                <span className="font-semibold text-green-600">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                                     In Stock
                                 </span>
                             )}
                         </div>
 
-                        {/* Size Availability */}
+                        {/* Size Selector */}
                         {(product.foot_numbers ||
                             (product.sizeStocks &&
                                 Object.keys(product.sizeStocks).length >
                                     0)) && (
-                            <div className="mb-6">
-                                <h4 className="mb-3 text-sm font-semibold text-gray-700">
+                            <div className="mb-4">
+                                <h4 className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                                     {product.sizeStocks &&
                                     Object.keys(product.sizeStocks).length > 0
-                                        ? 'Select Size (EU):'
-                                        : 'Available Sizes (EU):'}
+                                        ? 'Select Size (EU)'
+                                        : 'Available Sizes (EU)'}
                                 </h4>
-                                <div className="grid grid-cols-4 gap-2">
+                                <div className="flex flex-wrap gap-1.5">
                                     {sizeInfo.map((sizeItem) => (
                                         <button
                                             key={sizeItem.size}
                                             onClick={() =>
                                                 setSelectedSize(sizeItem.size)
                                             }
-                                            className={`relative rounded-lg border p-3 text-center transition-all ${
+                                            className={`min-w-[3rem] rounded-lg border px-2.5 py-1.5 text-center text-sm font-medium transition-all ${
                                                 selectedSize === sizeItem.size
-                                                    ? 'border-[#771E49] bg-[#771E49] text-white'
-                                                    : 'cursor-pointer border-gray-300 bg-white hover:border-[#771E49] hover:bg-[#771E49]/5'
+                                                    ? 'border-[#771E49] bg-[#771E49] text-white shadow-sm'
+                                                    : 'border-gray-200 bg-white text-gray-700 hover:border-[#771E49] hover:text-[#771E49]'
                                             }`}
                                         >
-                                            <span className="text-sm font-medium">
-                                                {sizeItem.size}
-                                            </span>
+                                            {sizeItem.size}
                                         </button>
                                     ))}
                                 </div>
                                 {selectedSize && (
-                                    <p className="mt-2 text-sm text-[#771E49]">
-                                        Selected size: EU {selectedSize}
+                                    <p className="mt-1.5 text-xs font-medium text-[#771E49]">
+                                        Selected: EU {selectedSize}
                                     </p>
                                 )}
                                 {product.sizeStocks &&
                                     Object.keys(product.sizeStocks).length >
                                         0 &&
                                     !selectedSize && (
-                                        <p className="mt-2 text-sm text-orange-600">
+                                        <p className="mt-1.5 text-xs font-medium text-orange-500">
                                             Please select a size to continue
                                         </p>
                                     )}
@@ -314,24 +382,24 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
 
                         {/* Quantity Selector */}
                         {!isOutOfStock && (
-                            <div className="mb-6">
+                            <div className="mb-5">
                                 <label
                                     htmlFor="quantity"
-                                    className="mb-2 block text-sm font-semibold text-gray-700"
+                                    className="mb-1.5 block text-xs font-semibold tracking-wide text-gray-500 uppercase"
                                 >
-                                    Quantity:
+                                    Quantity
                                 </label>
-                                <div className="flex items-center gap-3">
+                                <div className="inline-flex items-center rounded-lg border border-gray-200">
                                     <button
                                         onClick={() =>
                                             setQuantity((q) =>
                                                 Math.max(1, q - 1),
                                             )
                                         }
-                                        className="rounded-lg border border-gray-300 p-2 text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#771E49] focus:outline-none"
+                                        className="rounded-l-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#771E49] focus:outline-none focus:ring-inset"
                                         aria-label="Decrease quantity"
                                     >
-                                        <Minus size={20} />
+                                        <Minus size={16} />
                                     </button>
                                     <input
                                         id="quantity"
@@ -350,7 +418,7 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                                 ),
                                             )
                                         }
-                                        className="w-20 rounded-lg border border-gray-300 py-2 text-center focus:ring-2 focus:ring-[#771E49] focus:outline-none"
+                                        className="w-14 border-x border-gray-200 py-2 text-center text-sm font-medium focus:ring-2 focus:ring-[#771E49] focus:outline-none focus:ring-inset"
                                         aria-label="Product quantity"
                                     />
                                     <button
@@ -360,14 +428,17 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                             )
                                         }
                                         disabled={quantity >= maxQuantity}
-                                        className="rounded-lg border border-gray-300 p-2 text-gray-700 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#771E49] focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="rounded-r-lg px-3 py-2 text-gray-600 transition-colors hover:bg-gray-50 focus:ring-2 focus:ring-[#771E49] focus:outline-none focus:ring-inset disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Increase quantity"
                                     >
-                                        <Plus size={20} />
+                                        <Plus size={16} />
                                     </button>
                                 </div>
                             </div>
                         )}
+
+                        {/* Spacer to push button to bottom */}
+                        <div className="flex-1" />
 
                         {/* Add to Cart Button */}
                         <button
@@ -383,7 +454,7 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                     product.sizeStocks[selectedSize]
                                         .quantity === 0)
                             }
-                            className={`flex w-full items-center justify-center gap-2 rounded-lg py-4 text-lg font-semibold transition-all duration-200 focus:ring-2 focus:ring-[#771E49] focus:ring-offset-2 focus:outline-none ${
+                            className={`flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold tracking-wide transition-all duration-200 focus:ring-2 focus:ring-[#771E49] focus:ring-offset-2 focus:outline-none ${
                                 isOutOfStock ||
                                 (!!product.sizeStocks &&
                                     Object.keys(product.sizeStocks).length >
@@ -393,12 +464,12 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                     !!product.sizeStocks?.[selectedSize] &&
                                     product.sizeStocks[selectedSize]
                                         .quantity === 0)
-                                    ? 'cursor-not-allowed bg-gray-200 text-gray-400'
-                                    : 'bg-[#771E49] text-white hover:scale-[1.02] hover:bg-[#5a1738]'
+                                    ? 'cursor-not-allowed bg-gray-100 text-gray-400'
+                                    : 'bg-[#771E49] text-white shadow-lg shadow-[#771E49]/25 hover:bg-[#5a1738]'
                             }`}
                             aria-label={`Add ${quantity} ${product.name} to cart`}
                         >
-                            <ShoppingCart size={24} />
+                            <ShoppingCart size={18} />
                             {isOutOfStock ||
                             (selectedSize &&
                                 product.sizeStocks?.[selectedSize]?.quantity ===
@@ -408,7 +479,7 @@ export const QuickView = memo(({ product, onClose }: QuickViewProps) => {
                                     Object.keys(product.sizeStocks).length >
                                         0 &&
                                     !selectedSize
-                                  ? 'Select Size'
+                                  ? 'Select a Size'
                                   : 'Add to Cart'}
                         </button>
                     </div>

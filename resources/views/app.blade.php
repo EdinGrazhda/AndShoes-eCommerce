@@ -40,9 +40,20 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
+        {{-- Preconnect to storage domain for faster image loading --}}
+        <link rel="dns-prefetch" href="{{ config('app.url') }}">
+        <link rel="preconnect" href="{{ config('app.url') }}" crossorigin>
+
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead
+        
+        {{-- Preload first product images for instant display on homepage --}}
+        @if(isset($preloadImages) && is_array($preloadImages))
+            @foreach($preloadImages as $imageUrl)
+                <link rel="preload" as="image" href="{{ $imageUrl }}" fetchpriority="high">
+            @endforeach
+        @endif
     </head>
     <body class="font-sans antialiased">
         @inertia

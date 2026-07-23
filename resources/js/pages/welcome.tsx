@@ -4,7 +4,7 @@ import {
     useInfiniteQuery,
     useQuery,
 } from '@tanstack/react-query';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BannerCarousel } from '../components/BannerCarousel';
 import { CartDrawer } from '../components/CartDrawer';
 import { CheckoutModal } from '../components/CheckoutModalSimple';
@@ -24,6 +24,9 @@ import type {
     PaginatedResponse,
     Product,
 } from '../types/store';
+
+// Import imageCache for immediate preloading
+import '../hooks/useImageCache';
 
 // Props interface for SSR data
 interface WelcomeProps {
@@ -190,6 +193,43 @@ function StorefrontContent({
         totalAmount,
         closeMultiSuccess,
     } = useCheckoutStore();
+
+    // Immediately preload first 8 product images on mount for instant display
+    useEffect(() => {
+        // Get first 8 product images from initial data
+        const firstImages: string[] = [];
+
+        // Add campaign images first
+        if (ssrCampaigns && Array.isArray(ssrCampaigns)) {
+            ssrCampaigns.slice(0, 3).forEach((campaign: any) => {
+                if (campaign?.product?.image_url) {
+                    firstImages.push(campaign.product.image_url);
+                }
+            });
+        }
+
+        // Add regular product images
+        if (initialProducts?.data && Array.isArray(initialProducts.data)) {
+            const remaining = 8 - firstImages.length;
+            initialProducts.data.slice(0, remaining).forEach((product: any) => {
+                if (product?.image_url) {
+                    firstImages.push(product.image_url);
+                }
+            });
+        }
+
+        // Preload immediately
+        if (firstImages.length > 0 && typeof window !== 'undefined') {
+            firstImages.forEach((url) => {
+                const link = document.createElement('link');
+                link.rel = 'preload';
+                link.as = 'image';
+                link.href = url;
+                (link as any).fetchPriority = 'high';
+                document.head.appendChild(link);
+            });
+        }
+    }, []); // Run only once on mount
 
     // Update filters when debounced search changes
     useMemo(() => {

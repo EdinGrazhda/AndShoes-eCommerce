@@ -76,6 +76,14 @@ export const ProductCard = memo(
         const isLowStock = product.stock === 'low stock';
         const isOutOfStock = product.stock === 'out of stock';
 
+        // Check if the product is new (created within the last 24 hours)
+        const isNewProduct = (() => {
+            if (!product.created_at) return false;
+            const createdDate = new Date(product.created_at).getTime();
+            const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+            return createdDate >= twentyFourHoursAgo;
+        })();
+
         // Parse available sizes and check stock
         const getAvailableSizes = () => {
             if (!product.foot_numbers) return [];
@@ -153,6 +161,13 @@ export const ProductCard = memo(
                     )}
                     <img
                         src={cachedUrl}
+                        srcSet={
+                            (product as any).all_images?.[0]
+                                ? `${(product as any).all_images[0].preview} 400w, 
+                                   ${(product as any).all_images[0].url || (product as any).all_images[0].preview} 800w`
+                                : undefined
+                        }
+                        sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         alt={product.name}
                         loading={priority ? 'eager' : 'lazy'}
                         fetchPriority={priority ? 'high' : 'auto'}
@@ -186,6 +201,20 @@ export const ProductCard = memo(
                                 )}
                                 % OFF
                             </span>
+                        </div>
+                    )}
+
+                    {/* New Product Badge */}
+                    {isNewProduct && (
+                        <div
+                            className={`absolute left-2 rounded bg-[#771E49] px-2 py-0.5 text-[10px] font-bold tracking-wide text-white shadow-md sm:text-xs ${
+                                product.hasActiveCampaign &&
+                                product.originalPrice
+                                    ? 'top-10'
+                                    : 'top-2'
+                            }`}
+                        >
+                            NEW
                         </div>
                     )}
                 </div>
